@@ -1,5 +1,5 @@
 {
-  "name": "arbitraje-taekwondo",
+  "name": "taekwondo-refereeing",
   "version": "1.0.0",
   "description": "Sistema de arbitraje para Taekwondo",
   "main": "server.js",
