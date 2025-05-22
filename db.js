@@ -1,6 +1,5 @@
 // db.js
 const sqlite3 = require('sqlite3').verbose();
-const db = new sqlite3.Database('./database.sqlite');
 const path = require('path');
 
 const dbPath = process.env.DATABASE_URL || path.join(__dirname, 'database.sqlite');
