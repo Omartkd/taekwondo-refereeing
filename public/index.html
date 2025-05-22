@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Arbitraje Taekwondo</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body {
+      font-family: sans-serif;
+      background: black;
+      color: white;
+      height: 100vh;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .navbar {
+      margin-bottom: 20px;
+    }
+    
+    .container-fluid {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .score-display {
+      font-size: 30rem;
+      font-weight: bold;
+      text-align: center;
+      border-radius: 10px;
+      margin: 10px;
+      padding: 20px;
+    }
+    
+    .blue-score {
+      background-color: blue;
+      color: white;
+    }
+    
+    .red-score {
+      background-color: red;
+      color: white;
+    }
+    
+    .kamgeon-score {
+      font-size: 10rem;
+      background-color: orange;
+      color: black;
+      border-radius: 10px;
+      text-align: center;
+      padding: 10px;
+      margin: 10px;
+      width: 120px;
+    }
+    
+    .timer-display {
+      font-size: 7rem;
+      background-color: orange;
+      color: black;
+      border-radius: 10px;
+      text-align: center;
+      padding: 10px;
+      margin: 10px;
+    }
+    
+    .round-display {
+      font-size: 5rem;
+      background-color: orange;
+      color: black;
+      border-radius: 10px;
+      text-align: center;
+      padding: 10px;
+      margin: 10px;
+    }
+    
+    .button-container {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      margin: 10px 0;
+      flex-wrap: wrap;
+    }
+    
+    .btn-score {
+      font-size: 2rem;
+      padding: 15px 30px;
+      min-width: 200px;
+    }
+    
+    .btn-blue {
+      background-color: #0d6efd;
+      color: white;
+    }
+    
+    .btn-red {
+      background-color: #dc3545;
+      color: white;
+    }
+    
+    .btn-orange {
+      background-color: #fd7e14;
+      color: black;
+    }
+    
+    .scores-container {
+      display: flex;
+      flex: 1;
+      flex-direction: column;
+    }
+    
+    .team-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .main-content {
+      display: flex;
+      flex: 1;
+    }
+    
+    .center-panel {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      margin: 0 20px;
+    }
+  </style>
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <div class="container-fluid">
+      <span class="navbar-brand">Arbitraje Taekwondo</span>
+      <div class="d-flex">
+        <span id="userEmail" class="navbar-text me-3"></span>
+        <button id="logoutBtn" class="btn btn-outline-light">Salir</button>
+      </div>
+    </div>
+    <li class="nav-item">
+  <a class="nav-link" href="/payment">Activar Suscripción</a>
+</li>
+  </nav>
+
+  
+
+  <!-- Contenido principal -->
+  <div class="container-fluid">
+    <div class="main-content">
+      <!-- Panel izquierdo (azul) -->
+      <div class="d-flex flex-column align-items-center" style="flex: 1;">
+        <div class="kamgeon-score" id="kamgeon-blue-score">0</div>
+        <div class="score-display blue-score" id="blueScore">0</div>
+      </div>
+      
+      <!-- Panel central -->
+      <div class="center-panel">
+        <div class="timer-display" id="mainTimer">00:00</div>
+        <div class="timer-display" id="medicalTimer">00:00</div>
+        <div class="round-display" id="roundDisplay">Round 1</div>
+        
+        <div class="button-container">
+          <button id="startTimer" class="btn btn-orange btn-score">Iniciar</button>
+          <button id="pauseTimer" class="btn btn-orange btn-score">Pausar</button>
+          <button id="resetTimer" class="btn btn-orange btn-score">Reiniciar</button>
+        </div>
+        
+        <div class="button-container">
+          <button id="medicalTime" class="btn btn-orange btn-score">Tiempo Médico</button>
+          <button id="resetMedical" class="btn btn-orange btn-score">Reiniciar Médico</button>
+        </div>
+        
+        <div class="button-container">
+          <button id="resetGame" class="btn btn-danger btn-score">Reiniciar Juego</button>
+        </div>
+      </div>
+      
+      <!-- Panel derecho (rojo) -->
+      <div class="d-flex flex-column align-items-center" style="flex: 1;">
+        <div class="kamgeon-score" id="kamgeon-red-score">0</div>
+        <div class="score-display red-score" id="redScore">0</div>
+      </div>
+    </div>
+    
+    <!-- Botones de puntuación -->
+    <div class="button-container">
+      <button class="btn btn-blue btn-score" id="blueHeadKickButton">+3 Cabeza</button>
+      <button class="btn btn-red btn-score" id="redHeadKickButton">+3 Cabeza</button>
+    </div>
+    
+    <div class="button-container">
+      <button class="btn btn-blue btn-score" id="blueBodyKickButton">+2 Peto</button>
+      <button class="btn btn-red btn-score" id="redBodyKickButton">+2 Peto</button>
+    </div>
+    
+    <div class="button-container">
+      <button class="btn btn-blue btn-score" id="blueSpinningBodyKickButton">+4 Giro Peto</button>
+      <button class="btn btn-red btn-score" id="redSpinningBodyKickButton">+4 Giro Peto</button>
+    </div>
+    
+    <div class="button-container">
+      <button class="btn btn-blue btn-score" id="blueSpinningHeadKickButton">+5 Giro Cabeza</button>
+      <button class="btn btn-red btn-score" id="redSpinningHeadKickButton">+5 Giro Cabeza</button>
+    </div>
+    
+    <div class="button-container">
+      <button class="btn btn-blue btn-score" id="bluePunchButton">+1 Puño</button>
+      <button class="btn btn-red btn-score" id="redPunchButton">+1 Puño</button>
+    </div>
+    
+    <div class="button-container">
+      <button class="btn btn-blue btn-score" id="blueAddButton">+1 General</button>
+      <button class="btn btn-red btn-score" id="redAddButton">+1 General</button>
+    </div>
+    
+    <div class="button-container">
+      <button class="btn btn-blue btn-score" id="blueSubtractButton">-1 General</button>
+      <button class="btn btn-red btn-score" id="redSubtractButton">-1 General</button>
+    </div>
+    
+    <div class="button-container">
+      <button class="btn btn-blue btn-score" id="blueKamgeonButton">Kamgeon</button>
+      <button class="btn btn-red btn-score" id="redKamgeonButton">Kamgeon</button>
+    </div>
+  </div>
+
+  <!-- Modal de Login -->
+  <div class="modal fade" id="loginModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content bg-dark text-light">
+        <div class="modal-header">
+          <h5 class="modal-title">Iniciar Sesión</h5>
+        </div>
+        <div class="modal-body">
+          <form id="loginForm">
+            <div class="mb-3">
+              <label for="email" class="form-label">Email</label>
+              <input type="email" class="form-control" id="loginEmail" required>
+            </div>
+            <div class="mb-3">
+              <label for="password" class="form-label">Contraseña</label>
+              <input type="password" class="form-control" id="loginPassword" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Ingresar</button>
+          </form>
+          <div class="mt-3">
+            <p>¿No tienes cuenta? <a href="#" id="showRegister">Regístrate</a></p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de Registro -->
+  <div class="modal fade" id="registerModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content bg-dark text-light">
+        <div class="modal-header">
+          <h5 class="modal-title">Registro</h5>
+        </div>
+        <div class="modal-body">
+          <form id="registerForm">
+            <div class="mb-3">
+              <label for="email" class="form-label">Email</label>
+              <input type="email" class="form-control" id="registerEmail" required>
+            </div>
+            <div class="mb-3">
+              <label for="password" class="form-label">Contraseña</label>
+              <input type="password" class="form-control" id="registerPassword" required>
+            </div>
+            <button type="submit" class="btn btn-success">Registrarse</button>
+          </form>
+          <div class="mt-3">
+            <p>¿Ya tienes cuenta? <a href="#" id="showLogin">Inicia sesión</a></p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    // Configuración inicial
+    const isProduction = window.location.host !== 'localhost:3000';
+    const SERVER_URL = isProduction 
+      ? "https://arbitraje-taekwondo.onrender.com" 
+      : "http://localhost:3000";
+    
+    let socket = null;
+    let authToken = null;
+    let userData = null;
+    
+    // Elementos del DOM
+    const loginModal = new bootstrap.Modal('#loginModal');
+    const registerModal = new bootstrap.Modal('#registerModal');
+    const userEmailSpan = document.getElementById('userEmail');
+    const logoutBtn = document.getElementById('logoutBtn');
+    
+    // Mostrar modal de login al cargar
+    document.addEventListener('DOMContentLoaded', () => {
+      const savedToken = localStorage.getItem('authToken');
+      if (savedToken) {
+        validateToken(savedToken);
+      } else {
+        loginModal.show();
+      }
+    });
+    
+    // Manejar formulario de login
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('loginEmail').value;
+      const password = document.getElementById('loginPassword').value;
+      
+      try {
+        const response = await fetch(`${SERVER_URL}/api/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+        
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || 'Error en credenciales');
+        }
+        
+        const data = await response.json();
+        authToken = data.token;
+        userData = data.user;
+        
+        localStorage.setItem('authToken', authToken);
+        initializeSocket();
+        updateUI();
+        loginModal.hide();
+      } catch (error) {
+        alert(error.message);
+      }
+    });
+    
+    // Manejar formulario de registro
+    document.getElementById('registerForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('registerEmail').value;
+      const password = document.getElementById('registerPassword').value;
+      
+      try {
+        const response = await fetch(`${SERVER_URL}/api/register`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+        
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || 'Error en registro');
+        }
+        
+        alert('Registro exitoso. Tu cuenta será activada después del pago.');
+        registerModal.hide();
+        loginModal.show();
+      } catch (error) {
+        alert(error.message);
+      }
+    });
+    
+    // Cambiar entre modales
+    document.getElementById('showRegister').addEventListener('click', (e) => {
+      e.preventDefault();
+      loginModal.hide();
+      registerModal.show();
+    });
+    
+    document.getElementById('showLogin').addEventListener('click', (e) => {
+      e.preventDefault();
+      registerModal.hide();
+      loginModal.show();
+    });
+    
+    // Manejar logout
+    logoutBtn.addEventListener('click', () => {
+      localStorage.removeItem('authToken');
+      if (socket) socket.disconnect();
+      authToken = null;
+      userData = null;
+      window.location.reload();
+    });
+    
+    // Verificar token almacenado
+    async function validateToken(token) {
+      try {
+        const response = await fetch(`${SERVER_URL}/api/validate`, {
+          method: 'GET',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (!response.ok) throw new Error('Token inválido');
+        
+        authToken = token;
+        initializeSocket();
+        
+        // Obtener información del usuario
+        const decoded = JSON.parse(atob(token.split('.')[1]));
+        const userResponse = await fetch(`${SERVER_URL}/api/user/${decoded.userId}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (userResponse.ok) {
+          userData = await userResponse.json();
+          updateUI();
+        } else {
+          throw new Error('No se pudo obtener información del usuario');
+        }
+      } catch (error) {
+        localStorage.removeItem('authToken');
+        loginModal.show();
+      }
+    }
+    
+    // Inicializar Socket.IO con autenticación
+    function initializeSocket() {
+      socket = io(SERVER_URL, {
+        auth: { token: authToken },
+        reconnection: true,
+        reconnectionAttempts: 5,
+        reconnectionDelay: 1000
+      });
+    
+      socket.on('connect', () => {
+        console.log('Conectado al servidor de arbitraje');
+      });
+    
+      socket.on('disconnect', (reason) => {
+        console.log('Desconectado:', reason);
+        if (reason === 'io server disconnect') {
+          // Reconectar después de 5 segundos
+          setTimeout(() => socket.connect(), 5000);
+        }
+      });
+    
+      socket.on('connect_error', (err) => {
+        console.log('Error de conexión:', err.message);
+      });
+    
+      socket.on('gameState', (state) => {
+        document.getElementById('blueScore').textContent = state.blueScore;
+        document.getElementById('redScore').textContent = state.redScore;
+      });
+    
+      socket.on('kamgeonState', (state) => {
+        document.getElementById('kamgeon-blue-score').textContent = state.blueScore;
+        document.getElementById('kamgeon-red-score').textContent = state.redScore;
+      });
+    
+      socket.on('victoriaPorDiferencia', (data) => {
+        const winnerName = data.winner === 'azul' ? 'AZUL' : 'ROJO';
+        alert(`¡EQUIPO ${winnerName} GANA POR DIFERENCIA DE ${data.difference} PUNTOS!\n\nPuntuación final:\nAzul: ${data.blueScore}\nRojo: ${data.redScore}`);
+      });
+    
+      socket.on('gameReset', () => {
+        console.log('Juego reiniciado');
+      });
+    
+      // Configurar manejadores de eventos para los botones
+      setupButtonHandlers();
+    }
+    
+    // Actualizar la UI después de login
+    function updateUI() {
+      userEmailSpan.textContent = userData.email;
+      logoutBtn.style.display = 'block';
+    }
+    
+    // Configurar manejadores de eventos para los botones
+    function setupButtonHandlers() {
+      // Botones de puntuación
+      document.getElementById('blueHeadKickButton').addEventListener('click', () => {
+        socket.emit('puntuacionCabeza', { equipo: 'azul', timestamp: Date.now() });
+      });
+    
+      document.getElementById('redHeadKickButton').addEventListener('click', () => {
+        socket.emit('puntuacionCabeza', { equipo: 'rojo', timestamp: Date.now() });
+      });
+    
+      document.getElementById('blueBodyKickButton').addEventListener('click', () => {
+        socket.emit('puntuacionPeto', { equipo: 'azul', timestamp: Date.now() });
+      });
+    
+      document.getElementById('redBodyKickButton').addEventListener('click', () => {
+        socket.emit('puntuacionPeto', { equipo: 'rojo', timestamp: Date.now() });
+      });
+    
+      document.getElementById('blueSpinningBodyKickButton').addEventListener('click', () => {
+        socket.emit('puntuacionGiroPeto', { equipo: 'azul', timestamp: Date.now() });
+      });
+    
+      document.getElementById('redSpinningBodyKickButton').addEventListener('click', () => {
+        socket.emit('puntuacionGiroPeto', { equipo: 'rojo', timestamp: Date.now() });
+      });
+    
+      document.getElementById('blueSpinningHeadKickButton').addEventListener('click', () => {
+        socket.emit('puntuacionGiroCabeza', { equipo: 'azul', timestamp: Date.now() });
+      });
+    
+      document.getElementById('redSpinningHeadKickButton').addEventListener('click', () => {
+        socket.emit('puntuacionGiroCabeza', { equipo: 'rojo', timestamp: Date.now() });
+      });
+    
+      document.getElementById('bluePunchButton').addEventListener('click', () => {
+        socket.emit('puntuacionPuño', { equipo: 'azul', timestamp: Date.now() });
+      });
+    
+      document.getElementById('redPunchButton').addEventListener('click', () => {
+        socket.emit('puntuacionPuño', { equipo: 'rojo', timestamp: Date.now() });
+      });
+    
+      document.getElementById('blueAddButton').addEventListener('click', () => {
+        socket.emit('puntuacionSumar', { equipo: 'azul', timestamp: Date.now() });
+      });
+    
+      document.getElementById('redAddButton').addEventListener('click', () => {
+        socket.emit('puntuacionSumar', { equipo: 'rojo', timestamp: Date.now() });
+      });
+    
+      document.getElementById('blueSubtractButton').addEventListener('click', () => {
+        socket.emit('puntuacionRestar', { equipo: 'azul', timestamp: Date.now() });
+      });
+    
+      document.getElementById('redSubtractButton').addEventListener('click', () => {
+        socket.emit('puntuacionRestar', { equipo: 'rojo', timestamp: Date.now() });
+      });
+    
+      document.getElementById('blueKamgeonButton').addEventListener('click', () => {
+        socket.emit('puntuacionKamgeon', { equipo: 'azul', timestamp: Date.now() });
+      });
+    
+      document.getElementById('redKamgeonButton').addEventListener('click', () => {
+        socket.emit('puntuacionKamgeon', { equipo: 'rojo', timestamp: Date.now() });
+      });
+    
+      document.getElementById('resetGame').addEventListener('click', () => {
+        if (confirm('¿Estás seguro de reiniciar el juego?')) {
+          socket.emit('resetGame');
+        }
+      });
+    
+      // Temporizadores
+      let mainTimerInterval;
+      let mainTimerSeconds = 0;
+      let isMainTimerRunning = false;
+      let isMainTimerPaused = false;
+      let mainTimerStartTime;
+    
+      let medicalTimerInterval;
+      let medicalTimerSeconds = 0;
+      let isMedicalTimerRunning = false;
+    
+      let currentRound = 1;
+      const maxRounds = 3;
+      const roundTime = 90; // 1.5 minutos en segundos
+      const recoveryTime = 60; // 1 minuto en segundos
+    
+      function updateMainTimer() {
+        const minutes = Math.floor(mainTimerSeconds / 60);
+        const seconds = mainTimerSeconds % 60;
+        document.getElementById('mainTimer').textContent = 
+          `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+      }
+    
+      function updateMedicalTimer() {
+        const minutes = Math.floor(medicalTimerSeconds / 60);
+        const seconds = medicalTimerSeconds % 60;
+        document.getElementById('medicalTimer').textContent = 
+          `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+      }
+    
+      function updateRoundDisplay() {
+        document.getElementById('roundDisplay').textContent = `Round ${currentRound}`;
+      }
+    
+      function playSound() {
+        const audio = new Audio('/audio/silbato.mp3');
+        audio.play().catch(e => console.error("Error al reproducir sonido:", e));
+      }
+    
+      document.getElementById('startTimer').addEventListener('click', () => {
+        if (!isMainTimerRunning && !isMainTimerPaused) {
+          mainTimerStartTime = Date.now();
+          mainTimerInterval = setInterval(() => {
+            mainTimerSeconds = Math.floor((Date.now() - mainTimerStartTime) / 1000);
+            updateMainTimer();
+            
+            if (mainTimerSeconds >= roundTime) {
+              clearInterval(mainTimerInterval);
+              isMainTimerRunning = false;
+              playSound();
+              
+              if (currentRound < maxRounds) {
+                currentRound++;
+                updateRoundDisplay();
+                startRecoveryTime();
+              } else {
+                alert('¡Combate finalizado!');
+              }
+            }
+          }, 1000);
+          
+          isMainTimerRunning = true;
+        }
+      });
+    
+      function startRecoveryTime() {
+        mainTimerSeconds = 0;
+        mainTimerStartTime = Date.now();
+        mainTimerInterval = setInterval(() => {
+          mainTimerSeconds = recoveryTime - Math.floor((Date.now() - mainTimerStartTime) / 1000);
+          
+          if (mainTimerSeconds <= 0) {
+            clearInterval(mainTimerInterval);
+            mainTimerSeconds = 0;
+            updateMainTimer();
+            playSound();
+            
+            if (currentRound <= maxRounds) {
+              // Iniciar siguiente round automáticamente
+              document.getElementById('startTimer').click();
+            }
+          } else {
+            updateMainTimer();
+          }
+        }, 1000);
+      }
+    
+      document.getElementById('pauseTimer').addEventListener('click', () => {
+        if (isMainTimerRunning) {
+          clearInterval(mainTimerInterval);
+          isMainTimerRunning = false;
+          isMainTimerPaused = true;
+        }
+      });
+    
+      document.getElementById('resetTimer').addEventListener('click', () => {
+        clearInterval(mainTimerInterval);
+        mainTimerSeconds = 0;
+        isMainTimerRunning = false;
+        isMainTimerPaused = false;
+        currentRound = 1;
+        updateMainTimer();
+        updateRoundDisplay();
+      });
+    
+      document.getElementById('medicalTime').addEventListener('click', () => {
+        if (!isMedicalTimerRunning) {
+          const startTime = Date.now();
+          medicalTimerSeconds = 60; // 1 minuto para tiempo médico
+          updateMedicalTimer();
+          
+          medicalTimerInterval = setInterval(() => {
+            medicalTimerSeconds = 60 - Math.floor((Date.now() - startTime) / 1000);
+            
+            if (medicalTimerSeconds <= 0) {
+              clearInterval(medicalTimerInterval);
+              medicalTimerSeconds = 0;
+              isMedicalTimerRunning = false;
+              updateMedicalTimer();
+              playSound();
+            } else {
+              updateMedicalTimer();
+            }
+          }, 1000);
+          
+          isMedicalTimerRunning = true;
+        }
+      });
+    
+      document.getElementById('resetMedical').addEventListener('click', () => {
+        clearInterval(medicalTimerInterval);
+        medicalTimerSeconds = 0;
+        isMedicalTimerRunning = false;
+        updateMedicalTimer();
+      });
+    
+      // Inicializar displays
+      updateMainTimer();
+      updateMedicalTimer();
+      updateRoundDisplay();
+    }
+  </script>
+</body>
+</html>

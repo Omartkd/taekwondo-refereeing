@@ -1,0 +1,94 @@
+#paymentSection {
+  display: none;
+}
+
+.payment-container {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 20px;
+  background: #222;
+  border-radius: 10px;
+  color: white;
+}
+
+.plan-selector {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.plan-btn {
+  flex: 1;
+  padding: 15px;
+  background: #333;
+  border: none;
+  border-radius: 5px;
+  color: white;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.plan-btn.active {
+  background: #4CAF50;
+  transform: scale(1.02);
+}
+
+.plan-btn h4 {
+  margin: 0 0 5px 0;
+}
+
+.plan-btn p {
+  margin: 0;
+  font-size: 1.2em;
+}
+
+.plan-btn p small {
+  font-size: 0.8em;
+  opacity: 0.8;
+}
+
+#payWithQvaPay {
+  width: 100%;
+  padding: 12px;
+  font-size: 1.2em;
+  background: #0069d9;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+#paymentStatus {
+  background: #111;
+  padding: 15px;
+  border-radius: 5px;
+}
+
+.progress {
+  height: 20px;
+  background: #333;
+  border-radius: 10px;
+  overflow: hidden;
+  margin: 10px 0;
+}
+
+.progress-bar {
+  height: 100%;
+  background: #4CAF50;
+  transition: width 0.3s;
+}
+
+#paymentLink {
+  display: block;
+  text-align: center;
+  padding: 8px;
+  background: #0069d9;
+  color: white;
+  border-radius: 5px;
+  text-decoration: none;
+  margin-top: 10px;
+}
+
+.mt-2 { margin-top: 0.5rem; }
+.mt-3 { margin-top: 1rem; }
+.mt-4 { margin-top: 1.5rem; }

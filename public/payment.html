@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pagos - Arbitraje Taekwondo</title>
+  <link rel="stylesheet" href="/public/css/payment.css">
+</head>
+<body>
+  <!-- Incluye tu navbar existente aquí -->
+  
+  <div id="paymentSection">
+    <div class="payment-container">
+      <h3>Activar Suscripción</h3>
+      
+      <div class="plan-selector">
+        <button id="monthlyPlan" class="plan-btn active" data-plan="monthly">
+          <h4>Plan Mensual</h4>
+          <p>$10 USD/mes</p>
+        </button>
+        <button id="annualPlan" class="plan-btn" data-plan="annual">
+          <h4>Plan Anual</h4>
+          <p>$100 USD/año <small>(20% de descuento)</small></p>
+        </button>
+      </div>
+      
+      <div id="qvapayPayment" class="mt-4">
+        <button id="payWithQvaPay" class="btn btn-primary">Pagar con QvaPay</button>
+        <div id="paymentStatus" class="mt-3" style="display: none;">
+          <p>Estado del pago: <span id="paymentStatusText">Pendiente</span></p>
+          <div class="progress mt-2">
+            <div id="paymentProgress" class="progress-bar" role="progressbar" style="width: 0%"></div>
+          </div>
+          <a id="paymentLink" href="#" target="_blank" class="btn btn-secondary mt-2">Abrir enlace de pago</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/public/js/payment.js"></script>
+</body>
+</html>
