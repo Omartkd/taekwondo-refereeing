@@ -4,7 +4,7 @@
   "description": "Sistema de arbitraje para Taekwondo",
   "main": "server.js",
   "scripts": {
-    "start": "mkdir -p data && node server.js"
+    "start": "node server.js"
     "dev": "nodemon server.js"
   },
   "dependencies": {
