@@ -15,7 +15,7 @@ const isProduction = process.env.NODE_ENV === 'production';
 const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || 'secreto-desarrollo';
 const CLIENT_URL = isProduction 
-  ? 'https://arbitraje-taekwondo.onrender.com' 
+  ? 'https://taekwondo-refereeing.onrender.com' 
   : 'http://localhost:3000';
 
 const { db, initializeDatabase } = require('./db');
