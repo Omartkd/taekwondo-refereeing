@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: taekwondo-refereeing
+    runtime: node
+    buildCommand: npm install
+    startCommand: node server.js
+    env: node
+    envVars:
+      - key: NODE_ENV
+        value: production
