@@ -1,4 +1,4 @@
-const API_URL = 'https://arbitraje-taekwondo.onrender.com';
+const API_URL = 'https://taekwondo-refereeing.onrender.com';
 let currentPayment = null;
 let paymentCheckInterval = null;
 
