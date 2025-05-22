@@ -5,10 +5,10 @@ const db = require('../db'); // Asegúrate de tener tu configuración de DB
 
 // Configuración QvaPay
 const QVAPAY_CONFIG = {
-  appId: '6d094ea5-8668-496c-b741-e177f1510357',
-  appSecret: 'k71eVMnaJwJL9bnPOECmfC9Zi9I1qhfhZxHAsUFa4qe0823dMj',
+  appId: '1c08aef4-b7e7-4266-936b-c88573e517af',
+  appSecret: '8I2C4cfbOeGy96T4Vm7JVpBOdcTRA6dIJfAu21de1QmCpLnD1I',
   baseUrl: 'https://qvapay.com/api/v1',
-  callbackUrl: 'https://arbitraje-taekwondo.onrender.com/callback',
+  callbackUrl: 'https://taekwondo-refereeing.onrender.com/callback',
 };
 
 // Middleware de autenticación (simplificado)
