@@ -19,33 +19,28 @@ const CLIENT_URL = isProduction
   : 'http://localhost:3000';
 
 const { db, initializeDatabase } = require('./db');
+initializeDatabase();
+    
 
-async function startServer() {
-  try {
-    // Inicializar la base de datos
-    await initializeDatabase();
-    
     // Insertar usuario admin si no existe
-    const adminExists = await getQuery(
-      "SELECT id FROM users WHERE email = 'admin@example.com'"
-    );
-    
-    if (!adminExists) {
-      const adminPassword = await bcrypt.hash('admin123', 10);
-      await runQuery(
-        `INSERT INTO users (email, password, isActive, subscriptionEnd) 
-         VALUES (?, ?, 1, datetime('now', '+30 days'))`,
-        ['admin@example.com', adminPassword]
-      );
-      console.log('Usuario admin creado');
-    }
+    const adminPassword = bcrypt.hashSync('admin123', 10);
+    db.get("SELECT id FROM users WHERE email = 'admin@example.com'", (err, row) => {
+      if (!row) {
+        db.run(`INSERT INTO users (email, password, isActive, subscriptionEnd) 
+                VALUES (?, ?, 1, datetime('now', '+30 days'))`, 
+                ['admin@example.com', adminPassword]);
+        console.log('Usuario admin creado: admin@example.com / admin123');
+      }
+    });
 
 // Middlewares
 app.use(cors({
   origin: CLIENT_URL,
   methods: ["GET", "POST"],
-  credentials: true
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true,
 }));
+
 app.use(express.json());
 app.use(express.static('public'));
 app.use('/api/payments', paymentRoutes);
@@ -99,12 +94,13 @@ function authenticateToken(req, res, next) {
   const token = req.headers['authorization']?.split(' ')[1];
   if (!token) return res.sendStatus(401);
 
-  jwt.verify(token, JWT_SECRET, (err, decoded) => {
+  jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
     if (err) return res.sendStatus(403);
     
-    db.get("SELECT id, isActive FROM users WHERE id = ?", [decoded.userId], (err, user) => {
-      if (err || !user || !user.isActive) return res.sendStatus(403);
-      req.userId = user.id;
+    // Verificar si la cuenta está activa
+    db.get("SELECT isActive FROM users WHERE id = ?", [user.userId], (err, row) => {
+      if (err || !row || !row.isActive) return res.status(403).json({ error: 'Cuenta no activa' });
+      req.user = user;
       next();
     });
   });
