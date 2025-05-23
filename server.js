@@ -19,19 +19,26 @@ const CLIENT_URL = isProduction
   : 'http://localhost:3000';
 
 const { db, initializeDatabase } = require('./db');
-initializeDatabase();
-    
 
+async function startServer() {
+  try {
+    // Inicializar la base de datos
+    await initializeDatabase();
+    
     // Insertar usuario admin si no existe
-    const adminPassword = bcrypt.hashSync('admin123', 10);
-    db.get("SELECT id FROM users WHERE email = 'admin@example.com'", (err, row) => {
-      if (!row) {
-        db.run(`INSERT INTO users (email, password, isActive, subscriptionEnd) 
-                VALUES (?, ?, 1, datetime('now', '+30 days'))`, 
-                ['admin@example.com', adminPassword]);
-        console.log('Usuario admin creado: admin@example.com / admin123');
-      }
-    });
+    const adminExists = await getQuery(
+      "SELECT id FROM users WHERE email = 'admin@example.com'"
+    );
+    
+    if (!adminExists) {
+      const adminPassword = await bcrypt.hash('admin123', 10);
+      await runQuery(
+        `INSERT INTO users (email, password, isActive, subscriptionEnd) 
+         VALUES (?, ?, 1, datetime('now', '+30 days'))`,
+        ['admin@example.com', adminPassword]
+      );
+      console.log('Usuario admin creado');
+    }
 
 // Middlewares
 app.use(cors({
