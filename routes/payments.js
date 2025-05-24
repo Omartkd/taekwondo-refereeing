@@ -65,23 +65,6 @@ router.post('/create-qvapay', authenticateToken, async (req, res) => {
       new Date(Date.now() + 365 * 24 * 60 * 60 * 1000) : 
       new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
 
-    // Guardar en base de datos
-    const result = await dbQuery(
-      `INSERT INTO payments (user_id, amount, plan_type, qvapay_id, expiration_date, status)
-       VALUES (?, ?, ?, ?, ?, 'pending')`,
-      [userId, amount, plan, response.data.transation_uuid, expirationDate]
-    );
-
-    // Respuesta exitosa
-    res.json({
-      success: true,
-      paymentUrl: response.data.url,
-      qvapayId: response.data.transation_uuid,
-      amount,
-      description,
-      expiresAt: expirationDate.toISOString()
-    });
-
   } catch (error) {
     // Manejo de errores - aquí 'error' está definido correctamente
     console.error('Error en /create-qvapay:', {
