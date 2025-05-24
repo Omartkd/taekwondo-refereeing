@@ -119,6 +119,6 @@ router.post('/create-qvapay', authenticateToken, async (req, res) => {
       error: error.message || 'Error al procesar el pago',
       details: error.response?.data || null
     });
-  }
+  
 });
 module.exports = router; 
