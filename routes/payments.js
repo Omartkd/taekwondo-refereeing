@@ -1,25 +1,23 @@
 const express = require('express');
 const router = express.Router();
 const axios = require('axios');
-const db = require('../db'); // Asegúrate de que esto exporte una conexión válida
+const db = require('../db');
 
-// Configuración QvaPay
 const QVAPAY_CONFIG = {
   appId: '1c08aef4-b7e7-4266-936b-c88573e517af',
-  appSecret: 'RBypDD68TBekw6QIMitIlr2juju5tnkeBqPMCoJDJ4OKX5Xz73',
+  appSecret: '8I2C4cfbOeGy96T4Vm7JVpBOdcTRA6dIJfAu21de1QmCpLnD1I',
   baseUrl: 'https://qvapay.com/api/v2',
-  callbackUrl: 'https://taekwondo-refereeing.onrender.com/callback',
+  callbackUrl: 'https://taekwondo-refereeing.onrender.com/callback'
 };
 
 // Middleware de autenticación
 const authenticateToken = (req, res, next) => {
   const token = req.headers['authorization']?.split(' ')[1];
   if (!token) return res.sendStatus(401);
-  // Aquí iría la lógica de verificación del token
   next();
 };
 
-// Función para ejecutar consultas SQL con promesas
+// Función para consultas a la base de datos
 const dbQuery = (sql, params) => {
   return new Promise((resolve, reject) => {
     db.query(sql, params, (err, result) => {
@@ -29,12 +27,14 @@ const dbQuery = (sql, params) => {
   });
 };
 
+// Ruta para crear pagos
 router.post('/create-qvapay', authenticateToken, async (req, res) => {
   try {
     const { userId, plan } = req.body;
     
+    // Validación de entrada
     if (!userId || !plan) {
-      return res.status(400).json({ error: 'Faltan campos requeridos: userId o plan' });
+      return res.status(400).json({ error: 'Se requieren userId y plan' });
     }
 
     const amount = plan === 'annual' ? 100.00 : 10.00;
@@ -55,47 +55,35 @@ router.post('/create-qvapay', authenticateToken, async (req, res) => {
       }
     });
 
-    // Validar respuesta de QvaPay (usando transation_uuid en lugar de uuid)
-    if (!response.data || typeof response.data !== 'object') {
-      throw new Error(`La respuesta de QvaPay no es un objeto válido: ${JSON.stringify(response.data)}`);
+    // Validar respuesta
+    if (!response.data?.transation_uuid) {
+      throw new Error('Falta transation_uuid en la respuesta de QvaPay');
     }
 
-    if (!response.data.transation_uuid) {
-      throw new Error(`Falta el transation_uuid en la respuesta: ${JSON.stringify(response.data)}`);
-    }
-
-    if (!response.data.url) {
-      throw new Error(`Falta la URL de pago en la respuesta: ${JSON.stringify(response.data)}`);
-    }
-
-    // Guardar en DB
+    // Calcular fecha de expiración
     const expirationDate = plan === 'annual' ? 
       new Date(Date.now() + 365 * 24 * 60 * 60 * 1000) : 
       new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
 
-    const sql = `
-      INSERT INTO payments (user_id, amount, plan_type, qvapay_id, expiration_date, status) 
-      VALUES (?, ?, ?, ?, ?, 'pending')
-    `;
-    
-    await dbQuery(sql, [
-      userId, 
-      amount, 
-      plan, 
-      response.data.transation_uuid, // Usamos transation_uuid aquí
-      expirationDate
-    ]);
+    // Guardar en base de datos
+    await dbQuery(
+      `INSERT INTO payments (user_id, amount, plan_type, qvapay_id, expiration_date, status)
+       VALUES (?, ?, ?, ?, ?, 'pending')`,
+      [userId, amount, plan, response.data.transation_uuid, expirationDate]
+    );
 
+    // Respuesta exitosa
     res.json({
       success: true,
       paymentUrl: response.data.url,
-      qvapayId: response.data.transation_uuid, // Y aquí también
+      qvapayId: response.data.transation_uuid,
       amount,
       description,
       expiresAt: expirationDate.toISOString()
     });
 
   } catch (error) {
+    // Manejo de errores - aquí 'error' está definido correctamente
     console.error('Error en /create-qvapay:', {
       message: error.message,
       stack: error.stack,
@@ -112,12 +100,5 @@ router.post('/create-qvapay', authenticateToken, async (req, res) => {
     });
   }
 });
-    const statusCode = error.response?.status || 500;
-    
-    res.status(statusCode).json({ 
-      success: false,
-      error: error.message || 'Error al procesar el pago',
-      details: error.response?.data || null
-    });
-  
-module.exports = router; 
+
+module.exports = router;
