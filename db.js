@@ -23,7 +23,51 @@ function runQuery(sql, params = []) {
   });
 }
 
-// Inicialización corregida
+// Función para activar usuario y registrar pago
+async function activateUserAndRecordPayment(remote_id, amount, transaction_uuid) {
+  try {
+    // Calcular fecha de expiración
+    const expirationDate = new Date();
+    if (amount === 100) {
+      expirationDate.setFullYear(expirationDate.getFullYear() + 1); // Anual
+    } else {
+      expirationDate.setMonth(expirationDate.getMonth() + 1); // Mensual
+    }
+
+    // Activar usuario
+    await runQuery(
+      `UPDATE users SET 
+        isActive = 1,
+        paymentDate = datetime('now'),
+        subscriptionEnd = ?
+       WHERE id = ?`,
+      [expirationDate.toISOString(), remote_id]
+    );
+
+    // Registrar el pago
+    await runQuery(
+      `INSERT INTO payments (
+        userId, amount, plan, status, 
+        transactionId, paymentDate, expirationDate
+      ) VALUES (?, ?, ?, ?, ?, datetime('now'), ?)`,
+      [
+        remote_id,
+        amount,
+        amount === 100 ? 'annual' : 'monthly',
+        'completed',
+        transaction_uuid,
+        expirationDate.toISOString()
+      ]
+    );
+
+    return true;
+  } catch (error) {
+    console.error('Error en activateUserAndRecordPayment:', error);
+    throw error;
+  }
+}
+
+// Inicialización de la base de datos
 async function initializeDatabase() {
   try {
     // Tabla users
@@ -38,7 +82,7 @@ async function initializeDatabase() {
       createdAt TEXT DEFAULT CURRENT_TIMESTAMP
     )`);
 
-    // Tabla payments (sintaxis corregida)
+    // Tabla payments
     await runQuery(`CREATE TABLE IF NOT EXISTS payments (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       userId INTEGER NOT NULL,
@@ -68,53 +112,13 @@ async function initializeDatabase() {
     console.log('Tablas creadas correctamente');
   } catch (err) {
     console.error('Error en initializeDatabase:', err);
-    throw err; // Propaga el error para manejarlo en server.js
+    throw err;
   }
 }
-
-// Activar usuario en la base de datos
-      await runQuery(
-        `UPDATE users SET 
-          isActive = 1,
-          paymentDate = datetime('now'),
-          subscriptionEnd = ?
-         WHERE id = ?`,
-        [expirationDate.toISOString(), remote_id]
-      );
-
-      // Registrar el pago (opcional)
-      await runQuery(
-        `INSERT INTO payments (
-          userId, amount, plan, status, 
-          transactionId, paymentDate, expirationDate
-        ) VALUES (?, ?, ?, ?, ?, datetime('now'), ?)`,
-        [
-          remote_id,
-          amount,
-          amount === 100 ? 'annual' : 'monthly',
-          'completed',
-          transaction_uuid,
-          expirationDate.toISOString()
-        ]
-      );
-
-      return res.json({ success: true, message: 'Cuenta activada correctamente' });
-    }
-    
-    res.json({ success: true, message: 'Pago no completado' });
-    
-  } catch (error) {
-    console.error('Error en callback:', error);
-    res.status(500).json({ 
-      success: false, 
-      error: error.message,
-      details: 'Error al activar la cuenta en la base de datos'
-    });
-  }
-});
 
 module.exports = {
   db,
   runQuery,
-  initializeDatabase
+  initializeDatabase,
+  activateUserAndRecordPayment
 };
