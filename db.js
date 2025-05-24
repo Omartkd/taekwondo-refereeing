@@ -72,6 +72,47 @@ async function initializeDatabase() {
   }
 }
 
+// Activar usuario en la base de datos
+      await runQuery(
+        `UPDATE users SET 
+          isActive = 1,
+          paymentDate = datetime('now'),
+          subscriptionEnd = ?
+         WHERE id = ?`,
+        [expirationDate.toISOString(), remote_id]
+      );
+
+      // Registrar el pago (opcional)
+      await runQuery(
+        `INSERT INTO payments (
+          userId, amount, plan, status, 
+          transactionId, paymentDate, expirationDate
+        ) VALUES (?, ?, ?, ?, ?, datetime('now'), ?)`,
+        [
+          remote_id,
+          amount,
+          amount === 100 ? 'annual' : 'monthly',
+          'completed',
+          transaction_uuid,
+          expirationDate.toISOString()
+        ]
+      );
+
+      return res.json({ success: true, message: 'Cuenta activada correctamente' });
+    }
+    
+    res.json({ success: true, message: 'Pago no completado' });
+    
+  } catch (error) {
+    console.error('Error en callback:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message,
+      details: 'Error al activar la cuenta en la base de datos'
+    });
+  }
+});
+
 module.exports = {
   db,
   runQuery,
