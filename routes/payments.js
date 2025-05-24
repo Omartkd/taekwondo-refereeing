@@ -3,6 +3,8 @@ const router = express.Router();
 const axios = require('axios');
 const db = require('../db');
 
+console.log('runQuery está definido?', typeof runQuery); // Debería mostrar "function"
+
 const QVAPAY_CONFIG = {
   appId: '1c08aef4-b7e7-4266-936b-c88573e517af',
   appSecret: 'RBypDD68TBekw6QIMitIlr2juju5tnkeBqPMCoJDJ4OKX5Xz73',
@@ -67,7 +69,7 @@ router.post('/create-qvapay', authenticateToken, async (req, res) => {
     }
 
     // Insertamos el pago usando tu función runQuery
-    await runQuery(
+    const result=await runQuery(
       `INSERT INTO payments (
         userId, 
         amount, 
