@@ -41,7 +41,14 @@ router.post('/create-qvapay', authenticateToken, async (req, res) => {
     const amount = plan === 'annual' ? 100.00 : 10.00;
     const description = `Suscripción ${plan === 'annual' ? 'Anual' : 'Mensual'} - Arbitraje Taekwondo`;
 
-    // Crear factura en QvaPay
+    console.log('Enviando solicitud a QvaPay con:', {
+      app_id: QVAPAY_CONFIG.appId,
+      amount,
+      description,
+      remote_id: userId.toString()
+    });
+
+    // Crear factura en QvaPay con timeout
     const response = await axios.post(`${QVAPAY_CONFIG.baseUrl}/create_invoice`, {
       app_id: QVAPAY_CONFIG.appId,
       app_secret: QVAPAY_CONFIG.appSecret,
@@ -49,14 +56,29 @@ router.post('/create-qvapay', authenticateToken, async (req, res) => {
       description,
       remote_id: userId.toString(),
       signed: 0
+    }, {
+      timeout: 10000 // 10 segundos de timeout
     });
 
-    // Validar respuesta de QvaPay
-    if (!response.data || !response.data.uuid) {
-      throw new Error('Respuesta inválida de QvaPay');
+    console.log('Respuesta de QvaPay:', {
+      status: response.status,
+      data: response.data
+    });
+
+    // Validar respuesta de QvaPay más detalladamente
+    if (!response.data || typeof response.data !== 'object') {
+      throw new Error(`La respuesta de QvaPay no es un objeto válido: ${JSON.stringify(response.data)}`);
     }
 
-    // Guardar en DB usando promesas
+    if (!response.data.uuid) {
+      throw new Error(`Falta el UUID en la respuesta: ${JSON.stringify(response.data)}`);
+    }
+
+    if (!response.data.url) {
+      throw new Error(`Falta la URL de pago en la respuesta: ${JSON.stringify(response.data)}`);
+    }
+
+    // Guardar en DB
     const expirationDate = plan === 'annual' ? 
       new Date(Date.now() + 365 * 24 * 60 * 60 * 1000) : 
       new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
@@ -73,16 +95,23 @@ router.post('/create-qvapay', authenticateToken, async (req, res) => {
       paymentUrl: response.data.url,
       qvapayId: response.data.uuid,
       amount,
-      description
+      description,
+      expiresAt: expirationDate.toISOString()
     });
 
   } catch (error) {
-    console.error('Error en /create-qvapay:', error);
-    res.status(500).json({ 
+    console.error('Error detallado en /create-qvapay:', {
+      message: error.message,
+      stack: error.stack,
+      response: error.response?.data
+    });
+
+    const statusCode = error.response?.status || 500;
+    
+    res.status(statusCode).json({ 
       success: false,
-      error: error.message || 'Error al procesar el pago' 
+      error: error.message || 'Error al procesar el pago',
+      details: error.response?.data || null
     });
   }
 });
-
-module.exports = router;
