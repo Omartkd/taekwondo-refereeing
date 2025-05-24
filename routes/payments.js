@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const axios = require('axios');
-const db = require('../db'); // Asegúrate de tener tu configuración de DB
+const db = require('../db'); // Asegúrate de que esto exporte una conexión válida
 
 // Configuración QvaPay
 const QVAPAY_CONFIG = {
@@ -11,7 +11,7 @@ const QVAPAY_CONFIG = {
   callbackUrl: 'https://taekwondo-refereeing.onrender.com/callback',
 };
 
-// Middleware de autenticación (simplificado)
+// Middleware de autenticación
 const authenticateToken = (req, res, next) => {
   const token = req.headers['authorization']?.split(' ')[1];
   if (!token) return res.sendStatus(401);
@@ -19,13 +19,29 @@ const authenticateToken = (req, res, next) => {
   next();
 };
 
+// Función para ejecutar consultas SQL con promesas
+const dbQuery = (sql, params) => {
+  return new Promise((resolve, reject) => {
+    db.query(sql, params, (err, result) => {
+      if (err) return reject(err);
+      resolve(result);
+    });
+  });
+};
+
 // Crear pago con QvaPay
 router.post('/create-qvapay', authenticateToken, async (req, res) => {
   try {
     const { userId, plan } = req.body;
+    
+    if (!userId || !plan) {
+      return res.status(400).json({ error: 'Faltan campos requeridos: userId o plan' });
+    }
+
     const amount = plan === 'annual' ? 100.00 : 10.00;
     const description = `Suscripción ${plan === 'annual' ? 'Anual' : 'Mensual'} - Arbitraje Taekwondo`;
 
+    // Crear factura en QvaPay
     const response = await axios.post(`${QVAPAY_CONFIG.baseUrl}/create_invoice`, {
       app_id: QVAPAY_CONFIG.appId,
       app_secret: QVAPAY_CONFIG.appSecret,
@@ -35,27 +51,37 @@ router.post('/create-qvapay', authenticateToken, async (req, res) => {
       signed: 0
     });
 
-    // Guardar en DB
-    db.run(
-      `INSERT INTO payments (...) VALUES (?, ?, ?, ?, ?)`,
-      [userId, amount, plan, response.data.uuid, plan === 'annual' ? '+12 months' : '+1 month'],
-      function(err) {
-        if (err) {
-          console.error('Error al insertar en DB:', err);
-          return res.status(500).json({ error: 'Error al guardar el pago' });
-        }
-        
-        console.log('Pago registrado con ID:', this.lastID);
-        res.json({
-          paymentUrl: response.data.url,
-          qvapayId: response.data.uuid
-        });
-      }
-    );
+    // Validar respuesta de QvaPay
+    if (!response.data || !response.data.uuid) {
+      throw new Error('Respuesta inválida de QvaPay');
+    }
+
+    // Guardar en DB usando promesas
+    const expirationDate = plan === 'annual' ? 
+      new Date(Date.now() + 365 * 24 * 60 * 60 * 1000) : 
+      new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+
+    const sql = `
+      INSERT INTO payments (user_id, amount, plan_type, qvapay_id, expiration_date, status) 
+      VALUES (?, ?, ?, ?, ?, 'pending')
+    `;
+    
+    await dbQuery(sql, [userId, amount, plan, response.data.uuid, expirationDate]);
+
+    res.json({
+      success: true,
+      paymentUrl: response.data.url,
+      qvapayId: response.data.uuid,
+      amount,
+      description
+    });
 
   } catch (error) {
-    console.error('Error:', error);
-    res.status(500).json({ error: error.message });
+    console.error('Error en /create-qvapay:', error);
+    res.status(500).json({ 
+      success: false,
+      error: error.message || 'Error al procesar el pago' 
+    });
   }
 });
 
