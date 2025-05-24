@@ -20,18 +20,17 @@ const CLIENT_URL = isProduction
 
 const { db, initializeDatabase } = require('./db');
 initializeDatabase();
-    
 
-    // Insertar usuario admin si no existe
-    const adminPassword = bcrypt.hashSync('admin123', 10);
-    db.get("SELECT id FROM users WHERE email = 'admin@example.com'", (err, row) => {
-      if (!row) {
-        db.run(`INSERT INTO users (email, password, isActive, subscriptionEnd) 
-                VALUES (?, ?, 1, datetime('now', '+30 days'))`, 
-                ['admin@example.com', adminPassword]);
-        console.log('Usuario admin creado: admin@example.com / admin123');
-      }
-    });
+// Insertar usuario admin si no existe
+const adminPassword = bcrypt.hashSync('admin123', 10);
+db.get("SELECT id FROM users WHERE email = 'admin@example.com'", (err, row) => {
+  if (!row) {
+    db.run(`INSERT INTO users (email, password, isActive, subscriptionEnd) 
+            VALUES (?, ?, 1, datetime('now', '+30 days'))`, 
+            ['admin@example.com', adminPassword]);
+    console.log('Usuario admin creado: admin@example.com / admin123');
+  }
+});
 
 // Middlewares
 app.use(cors({
@@ -50,7 +49,7 @@ app.use((err, req, res, next) => {
   res.status(500).send('Algo salió mal!');
 });
 app.set('views', path.join(__dirname, 'views'));
-app.set('view engine', 'html'); // Configura tu motor de vistas
+app.set('view engine', 'html');
 
 // Rutas de autenticación
 app.post('/api/register', async (req, res) => {
@@ -99,10 +98,9 @@ function authenticateToken(req, res, next) {
   const token = req.headers['authorization']?.split(' ')[1];
   if (!token) return res.sendStatus(401);
 
-  jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+  jwt.verify(token, JWT_SECRET, (err, user) => {
     if (err) return res.sendStatus(403);
     
-    // Verificar si la cuenta está activa
     db.get("SELECT isActive FROM users WHERE id = ?", [user.userId], (err, row) => {
       if (err || !row || !row.isActive) return res.status(403).json({ error: 'Cuenta no activa' });
       req.user = user;
@@ -111,7 +109,6 @@ function authenticateToken(req, res, next) {
   });
 }
 
-// Ruta para verificar token
 app.get('/api/validate', authenticateToken, (req, res) => {
   res.json({ valid: true });
 });
@@ -152,14 +149,8 @@ io.use((socket, next) => {
 
 io.on('connection', (socket) => {
   console.log('Usuario conectado:', socket.userId);
+  socket.join(socket.userId.toString());
 
-  socket.on('syncScore', (data) => {
-    // Re-emitir a todos los clientes del mismo usuario
-    io.to(socket.userId.toString()).emit('updateScore', data);
-  });
-
-   socket.join(socket.userId.toString());
-  
   // Cargar o crear sesión de juego
   if (!activeSessions.has(socket.userId)) {
     db.get(
@@ -188,8 +179,11 @@ io.on('connection', (socket) => {
             redScore: gameState.redKamgeon || 0
           },
           anotacionesTemporales: {
-            azul: [],
-            rojo: []
+            cabeza: { azul: [], rojo: [] },
+            peto: { azul: [], rojo: [] },
+            giroPeto: { azul: [], rojo: [] },
+            giroCabeza: { azul: [], rojo: [] },
+            puño: { azul: [], rojo: [] }
           }
         });
         
@@ -206,91 +200,53 @@ io.on('connection', (socket) => {
     socket.emit('kamgeonState', session.kamgeonState);
   }
 
-  // Manejadores de eventos
-  const handlePuntuacion = (points) => (data) => {
+  // Manejador genérico para puntuaciones con coincidencia
+  const handlePuntuacionConCoincidencia = (points, tipoGolpe) => (data) => {
     const session = activeSessions.get(socket.userId);
     if (!session || !session.gameState.gameActive) return;
 
-    const { equipo, timestamp } = data;
+    const { equipo, juezId } = data;
     const now = Date.now();
 
-    if (now - timestamp <= 5000) {
-      session.anotacionesTemporales[equipo].push({ timestamp, clienteId: socket.id });
+    // Registrar la anotación temporal
+    session.anotacionesTemporales[tipoGolpe][equipo].push({ 
+      timestamp: now, 
+      juezId 
+    });
 
-      if (session.timeoutId) {
-        clearTimeout(session.timeoutId);
-      }
+    // Filtrar anotaciones antiguas (últimos 5 segundos)
+    session.anotacionesTemporales[tipoGolpe][equipo] = 
+      session.anotacionesTemporales[tipoGolpe][equipo]
+        .filter(anot => now - anot.timestamp <= 5000);
 
-      if (session.anotacionesTemporales[equipo].length >= 2) {
-        const anotaciones = session.anotacionesTemporales[equipo];
-        const primeraAnotacion = anotaciones[0];
-        const ultimaAnotacion = anotaciones[anotaciones.length - 1];
+    // Verificar coincidencias (al menos 2 jueces diferentes)
+    const anotacionesEquipo = session.anotacionesTemporales[tipoGolpe][equipo];
+    const juecesUnicos = [...new Set(anotacionesEquipo.map(a => a.juezId))];
 
-        if (primeraAnotacion.clienteId !== ultimaAnotacion.clienteId) {
-          const diferencia = Math.abs(primeraAnotacion.timestamp - ultimaAnotacion.timestamp);
-
-          if (diferencia <= 5000) {
-            if (equipo === 'azul') {
-              session.gameState.blueScore += points;
-            } else {
-              session.gameState.redScore += points;
-            }
-
-            io.to(socket.userId.toString()).emit('gameState', session.gameState);
-            session.anotacionesTemporales[equipo] = [];
-            checkScoreDifference(socket.userId);
-          } else {
-            session.anotacionesTemporales[equipo].shift();
-          }
-        } else {
-          session.anotacionesTemporales[equipo].shift();
-        }
+    if (juecesUnicos.length >= 2) {
+      // Punto válido - coincidencia de al menos 2 jueces
+      if (equipo === 'azul') {
+        session.gameState.blueScore += points;
       } else {
-        session.timeoutId = setTimeout(() => {
-          session.anotacionesTemporales[equipo] = [];
-        }, 5000);
+        session.gameState.redScore += points;
       }
+
+      // Limpiar anotaciones temporales para este tipo de golpe
+      session.anotacionesTemporales[tipoGolpe][equipo] = [];
+      
+      io.to(socket.userId.toString()).emit('gameState', session.gameState);
+      checkScoreDifference(socket.userId);
     }
   };
 
-  socket.on('puntuacionCabeza', handlePuntuacion(3));
-  socket.on('puntuacionPeto', handlePuntuacion(2));
-  socket.on('puntuacionGiroPeto', handlePuntuacion(4));
-  socket.on('puntuacionGiroCabeza', handlePuntuacion(5));
-  socket.on('puntuacionPuño', handlePuntuacion(1));
+  // Manejadores específicos para cada tipo de golpe
+  socket.on('puntuacionCabeza', handlePuntuacionConCoincidencia(3, 'cabeza'));
+  socket.on('puntuacionPeto', handlePuntuacionConCoincidencia(2, 'peto'));
+  socket.on('puntuacionGiroPeto', handlePuntuacionConCoincidencia(4, 'giroPeto'));
+  socket.on('puntuacionGiroCabeza', handlePuntuacionConCoincidencia(5, 'giroCabeza'));
+  socket.on('puntuacionPuño', handlePuntuacionConCoincidencia(1, 'puño'));
 
-  socket.on('puntuacionRestar', (data) => {
-    const session = activeSessions.get(socket.userId);
-    if (!session || !session.gameState.gameActive) return;
-
-    const { equipo } = data;
-    
-    if (equipo === 'azul') {
-      session.gameState.blueScore = Math.max(session.gameState.blueScore - 1, 0);
-    } else {
-      session.gameState.redScore = Math.max(session.gameState.redScore - 1, 0);
-    }
-
-    io.to(socket.userId.toString()).emit('gameState', session.gameState);
-    checkScoreDifference(socket.userId);
-  });
-
-  socket.on('puntuacionSumar', (data) => {
-    const session = activeSessions.get(socket.userId);
-    if (!session || !session.gameState.gameActive) return;
-
-    const { equipo } = data;
-    
-    if (equipo === 'azul') {
-      session.gameState.blueScore += 1;
-    } else {
-      session.gameState.redScore += 1;
-    }
-
-    io.to(socket.userId.toString()).emit('gameState', session.gameState);
-    checkScoreDifference(socket.userId);
-  });
-
+  // Kamgeon no requiere coincidencia
   socket.on('puntuacionKamgeon', (data) => {
     const session = activeSessions.get(socket.userId);
     if (!session || !session.gameState.gameActive) return;
@@ -322,14 +278,12 @@ io.on('connection', (socket) => {
     };
     
     session.anotacionesTemporales = {
-      azul: [],
-      rojo: []
+      cabeza: { azul: [], rojo: [] },
+      peto: { azul: [], rojo: [] },
+      giroPeto: { azul: [], rojo: [] },
+      giroCabeza: { azul: [], rojo: [] },
+      puño: { azul: [], rojo: [] }
     };
-    
-    if (session.timeoutId) {
-      clearTimeout(session.timeoutId);
-      session.timeoutId = null;
-    }
     
     // Guardar en base de datos
     db.run(
@@ -349,14 +303,10 @@ io.on('connection', (socket) => {
     io.to(socket.userId.toString()).emit('gameState', session.gameState);
     io.to(socket.userId.toString()).emit('kamgeonState', session.kamgeonState);
     io.to(socket.userId.toString()).emit('gameReset');
-    
-    console.log(`Juego reiniciado para usuario ${socket.userId}`);
   });
 
   socket.on('disconnect', () => {
     console.log('Usuario desconectado:', socket.userId);
-    // Guardar estado al desconectar
-
     const session = activeSessions.get(socket.userId);
     if (session) {
       db.run(
@@ -414,10 +364,9 @@ function checkScoreDifference(userId) {
   }
 }
 
-// Ruta para administración (activar usuarios)
+// Ruta para administración
 app.post('/api/admin/activate', authenticateToken, (req, res) => {
-  // Verificar si el usuario es admin (deberías implementar roles)
-  db.get("SELECT id FROM users WHERE id = ? AND email = 'admin@example.com'", [req.userId], (err, user) => {
+  db.get("SELECT id FROM users WHERE id = ? AND email = 'admin@example.com'", [req.user.userId], (err, user) => {
     if (err || !user) return res.status(403).json({ error: 'No autorizado' });
 
     const { userId } = req.body;
