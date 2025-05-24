@@ -27,11 +27,6 @@ const dbQuery = (sql, params) => {
   });
 };
 
-// Ruta para crear pagos
-const express = require('express');
-const router = express.Router();
-const { runQuery } = require('../db'); // Importamos runQuery de tu db.js
-
 // Ruta para crear pagos adaptada para SQLite
 router.post('/create-qvapay', authenticateToken, async (req, res) => {
   try {
