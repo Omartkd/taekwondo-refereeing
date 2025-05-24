@@ -6,7 +6,7 @@ const db = require('../db');
 const QVAPAY_CONFIG = {
   appId: '1c08aef4-b7e7-4266-936b-c88573e517af',
   appSecret: '8I2C4cfbOeGy96T4Vm7JVpBOdcTRA6dIJfAu21de1QmCpLnD1I',
-  baseUrl: 'https://qvapay.com/api/v2',
+  baseUrl: 'https://qvapay.com/api/v1',
   callbackUrl: 'https://taekwondo-refereeing.onrender.com/callback'
 };
 
