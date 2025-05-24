@@ -43,7 +43,12 @@ app.use(cors({
 
 app.use(express.json());
 app.use(express.static('public'));
+app.use(express.urlencoded({ extended: true }));
 app.use('/api/payments', paymentRoutes);
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).send('Algo salió mal!');
+});
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'html'); // Configura tu motor de vistas
 
