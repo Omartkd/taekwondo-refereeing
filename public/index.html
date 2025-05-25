@@ -495,52 +495,65 @@
   });
     
       document.getElementById('blueBodyKickButton').addEventListener('click', () => {
-        socket.emit('puntuacionPeto', { equipo: 'azul', timestamp: Date.now() });
+        socket.emit('puntuacionPeto', { equipo: 'azul', timestamp: Date.now(), juezId: 'juez1' });
       });
     
       document.getElementById('redBodyKickButton').addEventListener('click', () => {
-        socket.emit('puntuacionPeto', { equipo: 'rojo', timestamp: Date.now() });
+        socket.emit('puntuacionPeto', { equipo: 'rojo', timestamp: Date.now(), juezId: 'juez1' });
       });
     
       document.getElementById('blueSpinningBodyKickButton').addEventListener('click', () => {
-        socket.emit('puntuacionGiroPeto', { equipo: 'azul', timestamp: Date.now() });
+        socket.emit('puntuacionGiroPeto', { equipo: 'azul', timestamp: Date.now(), juezId: 'juez1' });
       });
     
       document.getElementById('redSpinningBodyKickButton').addEventListener('click', () => {
-        socket.emit('puntuacionGiroPeto', { equipo: 'rojo', timestamp: Date.now() });
+        socket.emit('puntuacionGiroPeto', { equipo: 'rojo', timestamp: Date.now(), juezId: 'juez1' });
       });
     
       document.getElementById('blueSpinningHeadKickButton').addEventListener('click', () => {
-        socket.emit('puntuacionGiroCabeza', { equipo: 'azul', timestamp: Date.now() });
+        socket.emit('puntuacionGiroCabeza', { equipo: 'azul', timestamp: Date.now(), juezId: 'juez1' });
       });
     
       document.getElementById('redSpinningHeadKickButton').addEventListener('click', () => {
-        socket.emit('puntuacionGiroCabeza', { equipo: 'rojo', timestamp: Date.now() });
+        socket.emit('puntuacionGiroCabeza', { equipo: 'rojo', timestamp: Date.now(), juezId: 'juez1' });
       });
     
       document.getElementById('bluePunchButton').addEventListener('click', () => {
-        socket.emit('puntuacionPuño', { equipo: 'azul', timestamp: Date.now() });
+        socket.emit('puntuacionPuño', { equipo: 'azul', timestamp: Date.now(), juezId: 'juez1' });
       });
     
       document.getElementById('redPunchButton').addEventListener('click', () => {
-        socket.emit('puntuacionPuño', { equipo: 'rojo', timestamp: Date.now() });
+        socket.emit('puntuacionPuño', { equipo: 'rojo', timestamp: Date.now(), juezId: 'juez1' });
       });
     
-      document.getElementById('blueAddButton').addEventListener('click', () => {
-        socket.emit('puntuacionSumar', { equipo: 'azul', timestamp: Date.now() });
-      });
-    
-      document.getElementById('redAddButton').addEventListener('click', () => {
-        socket.emit('puntuacionSumar', { equipo: 'rojo', timestamp: Date.now() });
-      });
+      // Botones de ajuste manual
+  document.getElementById('blueAddButton').addEventListener('click', () => {
+    socket.emit('puntuacionSumar', { 
+      equipo: 'azul', 
+      timestamp: Date.now() 
+    });
+  });
+
+  document.getElementById('redAddButton').addEventListener('click', () => {
+    socket.emit('puntuacionSumar', { 
+      equipo: 'rojo', 
+      timestamp: Date.now() 
+    });
+  });
     
       document.getElementById('blueSubtractButton').addEventListener('click', () => {
-        socket.emit('puntuacionRestar', { equipo: 'azul', timestamp: Date.now() });
-      });
-    
-      document.getElementById('redSubtractButton').addEventListener('click', () => {
-        socket.emit('puntuacionRestar', { equipo: 'rojo', timestamp: Date.now() });
-      });
+    socket.emit('puntuacionRestar', { 
+      equipo: 'azul', 
+      timestamp: Date.now() 
+    });
+  });
+
+  document.getElementById('redSubtractButton').addEventListener('click', () => {
+    socket.emit('puntuacionRestar', { 
+      equipo: 'rojo', 
+      timestamp: Date.now() 
+    });
+  });
     
        document.getElementById('blueKamgeonButton').addEventListener('click', () => {
     socket.emit('puntuacionKamgeon', { 
