@@ -477,14 +477,22 @@
     
     // Configurar manejadores de eventos para los botones
     function setupButtonHandlers() {
-      // Botones de puntuación
-      document.getElementById('blueHeadKickButton').addEventListener('click', () => {
-        socket.emit('puntuacionCabeza', { equipo: 'azul', timestamp: Date.now() });
-      });
-    
-      document.getElementById('redHeadKickButton').addEventListener('click', () => {
-        socket.emit('puntuacionCabeza', { equipo: 'rojo', timestamp: Date.now() });
-      });
+  // Botones de puntuación principal
+  document.getElementById('blueHeadKickButton').addEventListener('click', () => {
+    socket.emit('puntuacionCabeza', { 
+      equipo: 'azul', 
+      timestamp: Date.now(),
+      juezId: 'juez1' // Añade un identificador único por juez
+    });
+  });
+
+  document.getElementById('redHeadKickButton').addEventListener('click', () => {
+    socket.emit('puntuacionCabeza', { 
+      equipo: 'rojo', 
+      timestamp: Date.now(),
+      juezId: 'juez1'
+    });
+  });
     
       document.getElementById('blueBodyKickButton').addEventListener('click', () => {
         socket.emit('puntuacionPeto', { equipo: 'azul', timestamp: Date.now() });
@@ -534,19 +542,27 @@
         socket.emit('puntuacionRestar', { equipo: 'rojo', timestamp: Date.now() });
       });
     
-      document.getElementById('blueKamgeonButton').addEventListener('click', () => {
-        socket.emit('puntuacionKamgeon', { equipo: 'azul', timestamp: Date.now() });
-      });
+       document.getElementById('blueKamgeonButton').addEventListener('click', () => {
+    socket.emit('puntuacionKamgeon', { 
+      equipo: 'azul', 
+      timestamp: Date.now() 
+    });
+  });
+
+  document.getElementById('redKamgeonButton').addEventListener('click', () => {
+    socket.emit('puntuacionKamgeon', { 
+      equipo: 'rojo', 
+      timestamp: Date.now() 
+    });
+  });
     
-      document.getElementById('redKamgeonButton').addEventListener('click', () => {
-        socket.emit('puntuacionKamgeon', { equipo: 'rojo', timestamp: Date.now() });
-      });
-    
-      document.getElementById('resetGame').addEventListener('click', () => {
-        if (confirm('¿Estás seguro de reiniciar el juego?')) {
-          socket.emit('resetGame');
-        }
-      });
+       // Botón de reinicio
+  document.getElementById('resetGame').addEventListener('click', () => {
+    if (confirm('¿Estás seguro de reiniciar el juego?')) {
+      socket.emit('resetGame');
+    }
+  });
+}
     
       // Temporizadores
       let mainTimerInterval;
