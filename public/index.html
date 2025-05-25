@@ -557,12 +557,9 @@
   });
     
        // Botón de reinicio
-  document.getElementById('resetGame').addEventListener('click', () => {
-    if (confirm('¿Estás seguro de reiniciar el juego?')) {
-      socket.emit('resetGame');
-    }
-  });
-}
+ socket.on('gameReset', () => {
+        console.log('Juego reiniciado');
+      });
     
       // Temporizadores
       let mainTimerInterval;
