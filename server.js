@@ -152,14 +152,8 @@ io.use((socket, next) => {
 
 io.on('connection', (socket) => {
   console.log('Usuario conectado:', socket.userId);
+  socket.join(socket.userId.toString());
 
-  socket.on('syncScore', (data) => {
-    // Re-emitir a todos los clientes del mismo usuario
-    io.to(socket.userId.toString()).emit('updateScore', data);
-  });
-
-   socket.join(socket.userId.toString());
-  
   // Cargar o crear sesión de juego
   if (!activeSessions.has(socket.userId)) {
     db.get(
@@ -206,7 +200,7 @@ io.on('connection', (socket) => {
     socket.emit('kamgeonState', session.kamgeonState);
   }
 
-  // Manejadores de eventos
+  // Manejador genérico para puntuaciones
   const handlePuntuacion = (points) => (data) => {
     const session = activeSessions.get(socket.userId);
     if (!session || !session.gameState.gameActive) return;
@@ -253,59 +247,57 @@ io.on('connection', (socket) => {
     }
   };
 
+  // Manejadores específicos para cada tipo de golpe
   socket.on('puntuacionCabeza', handlePuntuacion(3));
   socket.on('puntuacionPeto', handlePuntuacion(2));
   socket.on('puntuacionGiroPeto', handlePuntuacion(4));
   socket.on('puntuacionGiroCabeza', handlePuntuacion(5));
   socket.on('puntuacionPuño', handlePuntuacion(1));
 
-  socket.on('puntuacionRestar', (data) => {
-    const session = activeSessions.get(socket.userId);
-    if (!session || !session.gameState.gameActive) return;
-
-    const { equipo } = data;
-    
-    if (equipo === 'azul') {
-      session.gameState.blueScore = Math.max(session.gameState.blueScore - 1, 0);
-    } else {
-      session.gameState.redScore = Math.max(session.gameState.redScore - 1, 0);
-    }
-
-    io.to(socket.userId.toString()).emit('gameState', session.gameState);
-    checkScoreDifference(socket.userId);
-  });
-
+  // Manejadores para ajustes manuales
   socket.on('puntuacionSumar', (data) => {
     const session = activeSessions.get(socket.userId);
     if (!session || !session.gameState.gameActive) return;
 
     const { equipo } = data;
-    
     if (equipo === 'azul') {
       session.gameState.blueScore += 1;
     } else {
       session.gameState.redScore += 1;
     }
-
     io.to(socket.userId.toString()).emit('gameState', session.gameState);
     checkScoreDifference(socket.userId);
   });
 
+  socket.on('puntuacionRestar', (data) => {
+    const session = activeSessions.get(socket.userId);
+    if (!session || !session.gameState.gameActive) return;
+
+    const { equipo } = data;
+    if (equipo === 'azul') {
+      session.gameState.blueScore = Math.max(0, session.gameState.blueScore - 1);
+    } else {
+      session.gameState.redScore = Math.max(0, session.gameState.redScore - 1);
+    }
+    io.to(socket.userId.toString()).emit('gameState', session.gameState);
+    checkScoreDifference(socket.userId);
+  });
+
+  // Manejador para Kamgeon (sin coincidencia requerida)
   socket.on('puntuacionKamgeon', (data) => {
     const session = activeSessions.get(socket.userId);
     if (!session || !session.gameState.gameActive) return;
 
     const { equipo } = data;
-    
     if (equipo === 'azul') {
       session.kamgeonState.blueScore += 1;
     } else {
       session.kamgeonState.redScore += 1;
     }
-
     io.to(socket.userId.toString()).emit('kamgeonState', session.kamgeonState);
   });
 
+  // Reiniciar juego
   socket.on('resetGame', () => {
     const session = activeSessions.get(socket.userId);
     if (!session) return;
@@ -315,48 +307,30 @@ io.on('connection', (socket) => {
       redScore: 0,
       gameActive: true
     };
-    
     session.kamgeonState = {
       blueScore: 0,
       redScore: 0
     };
-    
     session.anotacionesTemporales = {
       azul: [],
       rojo: []
     };
-    
-    if (session.timeoutId) {
-      clearTimeout(session.timeoutId);
-      session.timeoutId = null;
-    }
-    
+
     // Guardar en base de datos
     db.run(
       `INSERT INTO game_sessions 
        (userId, blueScore, redScore, blueKamgeon, redKamgeon, gameActive) 
        VALUES (?, ?, ?, ?, ?, ?)`,
-      [
-        socket.userId, 
-        session.gameState.blueScore, 
-        session.gameState.redScore,
-        session.kamgeonState.blueScore,
-        session.kamgeonState.redScore,
-        1
-      ]
+      [socket.userId, 0, 0, 0, 0, 1]
     );
-    
+
     io.to(socket.userId.toString()).emit('gameState', session.gameState);
     io.to(socket.userId.toString()).emit('kamgeonState', session.kamgeonState);
     io.to(socket.userId.toString()).emit('gameReset');
-    
-    console.log(`Juego reiniciado para usuario ${socket.userId}`);
   });
 
   socket.on('disconnect', () => {
     console.log('Usuario desconectado:', socket.userId);
-    // Guardar estado al desconectar
-
     const session = activeSessions.get(socket.userId);
     if (session) {
       db.run(
@@ -391,8 +365,7 @@ function checkScoreDifference(userId) {
       winner: winner,
       blueScore: blueScore,
       redScore: redScore,
-      difference: difference,
-      timestamp: Date.now()
+      difference: difference
     };
     
     io.to(userId.toString()).emit('victoriaPorDiferencia', victoryData);
@@ -413,7 +386,6 @@ function checkScoreDifference(userId) {
     );
   }
 }
-
 // Ruta para administración (activar usuarios)
 app.post('/api/admin/activate', authenticateToken, (req, res) => {
   // Verificar si el usuario es admin (deberías implementar roles)
