@@ -132,21 +132,173 @@
   </style>
 </head>
 <body>
-  <!-- Navbar -->
-  <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-    <div class="container-fluid">
-      <span class="navbar-brand">Arbitraje Taekwondo</span>
-      <div class="d-flex">
+
+<!-- Navbar Mejorado con Admin y Suscripción -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+  <div class="container-fluid">
+    <!-- Logo y marca -->
+    <a class="navbar-brand" href="/">
+      <i class="fas fa-user-ninja me-2"></i>
+      Arbitraje Taekwondo Pro
+    </a>
+
+    <!-- Botón para móviles -->
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <!-- Contenido del navbar -->
+    <div class="collapse navbar-collapse" id="navbarContent">
+      <ul class="navbar-nav me-auto">
+        <!-- Enlace de Admin (oculto por defecto, visible solo para admins) -->
+        <li id="adminLink" class="nav-item" style="display: true;">
+          <a class="nav-link" href="/admin.html">
+            <i class="fas fa-cog me-1"></i> Panel Admin
+          </a>
+        </li>
+        
+        <!-- Enlace de Suscripción (siempre visible) -->
+        <li class="nav-item">
+          <a class="nav-link" href="/payment" id="subscriptionLink">
+            <i class="fas fa-crown me-1"></i> Suscripción Premium
+          </a>
+        </li>
+      </ul>
+
+      <!-- Área de usuario -->
+      <div class="d-flex align-items-center">
         <span id="userEmail" class="navbar-text me-3"></span>
-        <button id="logoutBtn" class="btn btn-outline-light">Salir</button>
+        <button id="logoutBtn" class="btn btn-outline-light">
+          <i class="fas fa-sign-out-alt me-1"></i> Salir
+        </button>
       </div>
     </div>
-    <li class="nav-item">
-  <a class="nav-link" href="/payment">Activar Suscripción</a>
-</li>
-  </nav>
+  </div>
+</nav>
 
-  
+<!-- Modal de Pagos (para /payment) -->
+<div class="modal fade" id="paymentModal" tabindex="-1" style="display: none;" aria-hidden="true"></div>
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <!-- En el modal de pagos, modifica el botón de cierre: -->
+<div class="modal-header bg-primary text-white">
+  <h5 class="modal-title">Elige tu plan Premium</h5>
+  <!-- Botón corregido: -->
+  <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+</div>
+      <div class="modal-body">
+        <div class="row">
+          <!-- Plan Básico -->
+          <div class="col-md-4 mb-4">
+            <div class="card h-100">
+              <div class="card-header bg-light">
+                <h5 class="text-center">Básico</h5>
+              </div>
+              <div class="card-body text-center">
+                <h3 class="card-title">$10.00</h3>
+                <p class="text-muted">por mes</p>
+                <ul class="list-unstyled text-start ps-3">
+                  <li><i class="fas fa-check text-success me-2"></i> 5 eventos/mes</li>
+                  <li><i class="fas fa-check text-success me-2"></i> Soporte básico</li>
+                </ul>
+                <form action="https://www.paypal.com/ncp/payment/AC4RXWLXVKDXC" method="post" target="_blank">
+                <button type="submit" class="btn btn-primary w-100 mt-3">
+                    <i class="fab fa-paypal me-2"></i> Suscribirse
+                  </button>
+                </form>
+              </div>
+            </div>
+          </div>
+
+          <!-- Plan Profesional (recomendado) -->
+          <div class="col-md-4 mb-4">
+            <div class="card h-100 border-success">
+              <div class="card-header bg-success text-white">
+                <h5 class="text-center">Profesional</h5>
+              </div>
+              <div class="card-body text-center">
+                <h3 class="card-title">$25.00</h3>
+                <p class="text-muted">por mes</p>
+                <ul class="list-unstyled text-start ps-3">
+                  <li><i class="fas fa-check text-success me-2"></i> Eventos ilimitados</li>
+                  <li><i class="fas fa-check text-success me-2"></i> Estadísticas avanzadas</li>
+                  <li><i class="fas fa-check text-success me-2"></i> Soporte prioritario</li>
+                </ul>
+                <form action="https://www.paypal.com/ncp/payment/7YYEWA5VQPPJ6" method="post" target="_blank">
+                <button type="submit" class="btn btn-success w-100 mt-3">
+                    <i class="fab fa-paypal me-2"></i> Suscribirse
+                  </button>
+                </form>
+              </div>
+            </div>
+          </div>
+
+          <!-- Plan Anual (Ahorro) -->
+          <div class="col-md-4 mb-4">
+            <div class="card h-100 border-warning">
+              <div class="card-header bg-warning">
+                <h5 class="text-center">Anual</h5>
+              </div>
+              <div class="card-body text-center">
+                <h3 class="card-title">$100.00</h3>
+                <p class="text-muted">2 meses gratis</p>
+                <ul class="list-unstyled text-start ps-3">
+                  <li><i class="fas fa-check text-success me-2"></i> Todo en Profesional</li>
+                  <li><i class="fas fa-check text-success me-2"></i> Certificado digital</li>
+                  <li><i class="fas fa-check text-success me-2"></i> Acceso anticipado</li>
+                </ul>
+                <form action="https://www.paypal.com/ncp/payment/SQ792XWPG949W" method="post" target="_blank">
+                <button type="submit" class="btn btn-warning w-100 mt-3">
+                    <i class="fab fa-paypal me-2"></i> Ahorrar 30%
+                  </button>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Obtener rol y estado de suscripción
+  const userRole = localStorage.getItem('userRole'); // Asegúrate que sea 'admin' para administradores
+  const isPremium = localStorage.getItem('isPremium') !== 'none'; // Asume que 'none' significa no premium
+
+  // Lógica para ADMIN
+  if (userRole === 'admin') {
+    // 1. Mostrar enlace de admin
+    document.getElementById('adminLink').style.display = 'block';
+    
+    // 2. Ocultar completamente el modal de pagos
+    const paymentModal = document.getElementById('paymentModal');
+    if (paymentModal) {
+      paymentModal.style.display = 'none';
+    }
+    
+    // 3. Quitar resaltado de suscripción (si lo tenía)
+    const subLink = document.getElementById('subscriptionLink');
+    subLink.classList.remove('text-warning', 'fw-bold');
+    subLink.innerHTML = '<i class="fas fa-crown me-1"></i> Suscripción Premium';
+  }
+  // Lógica para USUARIOS NO PREMIUM
+  else if (!isPremium) {
+    // 1. Resaltar suscripción
+    const subLink = document.getElementById('subscriptionLink');
+    subLink.classList.add('text-warning', 'fw-bold');
+    subLink.innerHTML = '<i class="fas fa-crown me-1"></i> ¡OBTÉN PREMIUM!';
+    
+    // 2. Mostrar modal de pagos
+    const paymentModal = document.getElementById('paymentModal');
+    if (paymentModal) {
+      paymentModal.style.display = 'block';
+    }
+  }
+});
+</script>
 
   <!-- Contenido principal -->
   <div class="container-fluid">
@@ -477,101 +629,75 @@
     
     // Configurar manejadores de eventos para los botones
     function setupButtonHandlers() {
-  // Botones de puntuación principal
-  document.getElementById('blueHeadKickButton').addEventListener('click', () => {
-    socket.emit('puntuacionCabeza', { 
-      equipo: 'azul', 
-      timestamp: Date.now(),
-      juezId: 'juez1' // Añade un identificador único por juez
-    });
-  });
-
-  document.getElementById('redHeadKickButton').addEventListener('click', () => {
-    socket.emit('puntuacionCabeza', { 
-      equipo: 'rojo', 
-      timestamp: Date.now(),
-      juezId: 'juez1'
-    });
-  });
+      // Botones de puntuación
+      document.getElementById('blueHeadKickButton').addEventListener('click', () => {
+        socket.emit('puntuacionCabeza', { equipo: 'azul', timestamp: Date.now() });
+      });
+    
+      document.getElementById('redHeadKickButton').addEventListener('click', () => {
+        socket.emit('puntuacionCabeza', { equipo: 'rojo', timestamp: Date.now() });
+      });
     
       document.getElementById('blueBodyKickButton').addEventListener('click', () => {
-        socket.emit('puntuacionPeto', { equipo: 'azul', timestamp: Date.now(), juezId: 'juez1' });
+        socket.emit('puntuacionPeto', { equipo: 'azul', timestamp: Date.now() });
       });
     
       document.getElementById('redBodyKickButton').addEventListener('click', () => {
-        socket.emit('puntuacionPeto', { equipo: 'rojo', timestamp: Date.now(), juezId: 'juez1' });
+        socket.emit('puntuacionPeto', { equipo: 'rojo', timestamp: Date.now() });
       });
     
       document.getElementById('blueSpinningBodyKickButton').addEventListener('click', () => {
-        socket.emit('puntuacionGiroPeto', { equipo: 'azul', timestamp: Date.now(), juezId: 'juez1' });
+        socket.emit('puntuacionGiroPeto', { equipo: 'azul', timestamp: Date.now() });
       });
     
       document.getElementById('redSpinningBodyKickButton').addEventListener('click', () => {
-        socket.emit('puntuacionGiroPeto', { equipo: 'rojo', timestamp: Date.now(), juezId: 'juez1' });
+        socket.emit('puntuacionGiroPeto', { equipo: 'rojo', timestamp: Date.now() });
       });
     
       document.getElementById('blueSpinningHeadKickButton').addEventListener('click', () => {
-        socket.emit('puntuacionGiroCabeza', { equipo: 'azul', timestamp: Date.now(), juezId: 'juez1' });
+        socket.emit('puntuacionGiroCabeza', { equipo: 'azul', timestamp: Date.now() });
       });
     
       document.getElementById('redSpinningHeadKickButton').addEventListener('click', () => {
-        socket.emit('puntuacionGiroCabeza', { equipo: 'rojo', timestamp: Date.now(), juezId: 'juez1' });
+        socket.emit('puntuacionGiroCabeza', { equipo: 'rojo', timestamp: Date.now() });
       });
     
       document.getElementById('bluePunchButton').addEventListener('click', () => {
-        socket.emit('puntuacionPuño', { equipo: 'azul', timestamp: Date.now(), juezId: 'juez1' });
+        socket.emit('puntuacionPuño', { equipo: 'azul', timestamp: Date.now() });
       });
     
       document.getElementById('redPunchButton').addEventListener('click', () => {
-        socket.emit('puntuacionPuño', { equipo: 'rojo', timestamp: Date.now(), juezId: 'juez1' });
+        socket.emit('puntuacionPuño', { equipo: 'rojo', timestamp: Date.now() });
       });
     
-      // Botones de ajuste manual
-  document.getElementById('blueAddButton').addEventListener('click', () => {
-    socket.emit('puntuacionSumar', { 
-      equipo: 'azul', 
-      timestamp: Date.now() 
-    });
-  });
-
-  document.getElementById('redAddButton').addEventListener('click', () => {
-    socket.emit('puntuacionSumar', { 
-      equipo: 'rojo', 
-      timestamp: Date.now() 
-    });
-  });
+      document.getElementById('blueAddButton').addEventListener('click', () => {
+        socket.emit('puntuacionSumar', { equipo: 'azul', timestamp: Date.now() });
+      });
+    
+      document.getElementById('redAddButton').addEventListener('click', () => {
+        socket.emit('puntuacionSumar', { equipo: 'rojo', timestamp: Date.now() });
+      });
     
       document.getElementById('blueSubtractButton').addEventListener('click', () => {
-    socket.emit('puntuacionRestar', { 
-      equipo: 'azul', 
-      timestamp: Date.now() 
-    });
-  });
-
-  document.getElementById('redSubtractButton').addEventListener('click', () => {
-    socket.emit('puntuacionRestar', { 
-      equipo: 'rojo', 
-      timestamp: Date.now() 
-    });
-  });
+        socket.emit('puntuacionRestar', { equipo: 'azul', timestamp: Date.now() });
+      });
     
-       document.getElementById('blueKamgeonButton').addEventListener('click', () => {
-    socket.emit('puntuacionKamgeon', { 
-      equipo: 'azul', 
-      timestamp: Date.now() 
-    });
-  });
-
-  document.getElementById('redKamgeonButton').addEventListener('click', () => {
-    socket.emit('puntuacionKamgeon', { 
-      equipo: 'rojo', 
-      timestamp: Date.now() 
-    });
-  });
+      document.getElementById('redSubtractButton').addEventListener('click', () => {
+        socket.emit('puntuacionRestar', { equipo: 'rojo', timestamp: Date.now() });
+      });
     
-       // Botón de reinicio
- socket.on('gameReset', () => {
-        console.log('Juego reiniciado');
+      document.getElementById('blueKamgeonButton').addEventListener('click', () => {
+        socket.emit('puntuacionKamgeon', { equipo: 'azul', timestamp: Date.now() });
+      });
+    
+      document.getElementById('redKamgeonButton').addEventListener('click', () => {
+        socket.emit('puntuacionKamgeon', { equipo: 'rojo', timestamp: Date.now() });
+      });
+    
+      document.getElementById('resetGame').addEventListener('click', () => {
+        if (confirm('¿Estás seguro de reiniciar el juego?')) {
+          socket.emit('resetGame');
+        }
       });
     
       // Temporizadores
