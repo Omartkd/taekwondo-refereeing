@@ -1,4 +1,5 @@
 const express = require('express');
+const router = express.Router();
 const app = express();
 const http = require('http');
 const server = http.createServer(app);
@@ -9,6 +10,7 @@ const sqlite3 = require('sqlite3').verbose();
 const bcrypt = require('bcryptjs');
 const path = require('path');
 const paymentRoutes = require('./routes/payments');
+const adminRoutes = require('./routes/admin');
 
 // Configuración
 const isProduction = process.env.NODE_ENV === 'production';
@@ -23,32 +25,43 @@ initializeDatabase();
     
 
     // Insertar usuario admin si no existe
-    const adminPassword = bcrypt.hashSync('admin123', 10);
-    db.get("SELECT id FROM users WHERE email = 'admin@example.com'", (err, row) => {
-      if (!row) {
-        db.run(`INSERT INTO users (email, password, isActive, subscriptionEnd) 
-                VALUES (?, ?, 1, datetime('now', '+30 days'))`, 
-                ['admin@example.com', adminPassword]);
-        console.log('Usuario admin creado: admin@example.com / admin123');
-      }
-    });
+    // En tu inicialización del servidor (server.js)
+const adminPassword = bcrypt.hashSync('admin123', 10);
+db.run(
+  `INSERT OR REPLACE INTO users 
+   (email, password, isActive, isAdmin, subscriptionEnd) 
+   VALUES (?, ?, 1, 1, datetime('now', '+365 days'))`,
+  ['admin@example.com', adminPassword],
+  function(err) {
+    if (err) {
+      console.error('Error creando usuario admin:', err);
+    } else {
+      console.log('Usuario admin configurado');
+    }
+  }
+);
 
 // Middlewares
 app.use(cors({
-  origin: CLIENT_URL,
-  methods: ["GET", "POST"],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true,
+  origin: 'http://localhost:3000',
+  methods: ['GET', 'POST'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
 app.use(express.json());
-app.use(express.static('public'));
-app.use(express.urlencoded({ extended: true }));
-app.use('/api/payments', paymentRoutes);
 app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).send('Algo salió mal!');
+  console.error('Error global:', err.stack);
+  
+  // Asegurar que siempre se devuelva JSON
+  res.status(500).json({
+    error: 'Error interno del servidor',
+    code: 'INTERNAL_ERROR',
+    requestId: req.id
+  });
 });
+app.use(express.static('public'));
+app.use('/api/payments', paymentRoutes);
+app.use('/api/admin', adminRoutes);
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'html'); // Configura tu motor de vistas
 
@@ -79,45 +92,230 @@ app.post('/api/login', (req, res) => {
       return res.status(401).json({ error: 'Credenciales inválidas' });
     }
     
-    if (!user.isActive) {
-      return res.status(403).json({ error: 'Cuenta no activa. Espera activación.' });
-    }
+    // Include isAdmin in the token payload
+    const token = jwt.sign(
+      { 
+        userId: user.id,
+        isAdmin: user.isAdmin === 1 // Ensure boolean
+      }, 
+      JWT_SECRET, 
+      { expiresIn: '8h' }
+    );
     
-    const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: '8h' });
     res.json({ 
-      token, 
-      user: { 
-        email: user.email, 
-        subscriptionEnd: user.subscriptionEnd 
-      } 
+      token,
+      user: {
+        email: user.email,
+        isAdmin: user.isAdmin
+      }
     });
   });
 });
 
-// Middleware de autenticación
-function authenticateToken(req, res, next) {
-  const token = req.headers['authorization']?.split(' ')[1];
-  if (!token) return res.sendStatus(401);
+// Reemplaza tu ruta /api/admin/activate con:
+app.post('/api/admin/activate', authenticateToken, (req, res) => {
+  // Verificar si el usuario es admin
+  if (!req.user.isAdmin) {
+    return res.status(403).json({ error: 'Se requieren privilegios de administrador' });
+  }
 
-  jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
-    if (err) return res.sendStatus(403);
-    
-    // Verificar si la cuenta está activa
-    db.get("SELECT isActive FROM users WHERE id = ?", [user.userId], (err, row) => {
-      if (err || !row || !row.isActive) return res.status(403).json({ error: 'Cuenta no activa' });
-      req.user = user;
+  const { userId } = req.body;
+  
+  db.run(
+    `UPDATE users SET 
+     isActive = 1,
+     subscriptionEnd = datetime('now', '+12 months')
+     WHERE id = ?`,
+    [userId],
+    function(err) {
+      if (err) return res.status(500).json({ error: err.message });
+      if (this.changes === 0) return res.status(404).json({ error: 'Usuario no encontrado' });
+      
+      res.json({ success: true });
+    }
+  );
+});
+
+app.post('/api/refresh-token', authenticateToken, (req, res) => {
+  const newToken = jwt.sign(
+    { userId: req.user.userId },
+    process.env.JWT_SECRET,
+    { expiresIn: '8h' }
+  );
+  res.json({ token: newToken });
+});
+
+// Middleware de autenticación
+// Middleware de autenticación actualizado
+// Middleware de autenticación mejorado
+
+function requireAdmin(req, res, next) {
+  const token = req.headers.authorization?.split(' ')[1];
+  if (!token) return res.status(403).json({ error: "Token required" });
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    if (decoded.role !== "admin") {  // 👈 Check for admin role
+      return res.status(403).json({ error: "Admin privileges required" });
+    }
+    req.user = decoded;
+    next();
+  } catch (err) {
+    res.status(403).json({ error: "Invalid token" });
+  }
+}
+
+function authenticateToken(req, res, next) {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+
+  if (!token) {
+    return res.status(401).json({ 
+      error: 'Token no proporcionado',
+      code: 'MISSING_TOKEN'
+    });
+  }
+
+  jwt.verify(token, JWT_SECRET, (err, decoded) => {
+    if (err) {
+      return res.status(403).json({
+        error: err.name === 'TokenExpiredError' ? 'Token expirado' : 'Token inválido',
+        code: err.name === 'TokenExpiredError' ? 'TOKEN_EXPIRED' : 'INVALID_TOKEN'
+      });
+    }
+
+    // Verificación mejorada del usuario
+    db.get("SELECT id, isAdmin FROM users WHERE id = ?", [decoded.userId], (err, user) => {
+      if (err) return res.status(500).json({ error: 'Error de base de datos' });
+      if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
+
+      req.user = {
+        userId: user.id,
+        isAdmin: user.isAdmin
+      };
       next();
     });
   });
 }
 
-// Ruta para verificar token
-app.get('/api/validate', authenticateToken, (req, res) => {
-  res.json({ valid: true });
-});
+
+const verifyAdmin = (req, res, next) => {
+  const token = req.headers.authorization?.split(' ')[1];
+  
+  if (!token) {
+    return res.status(403).json({ error: 'Se requiere token de autenticación' });
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    
+    // Check if user has admin role
+    if (decoded.role !== 'admin') {
+      return res.status(403).json({ error: 'Se requieren privilegios de administrador' });
+    }
+    
+    req.user = decoded;
+    next();
+  } catch (err) {
+    return res.status(403).json({ error: 'Token inválido o expirado' });
+  }
+};
+
+
+// Ruta de validación específica
+// Ruta de validación mejorada
+// Reemplaza la ruta actual con esto:
+
 
 app.get('/payment', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'payment.html'));
+});
+
+app.get('/login.html', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'login.html'));
+});
+// Middleware para manejar errores
+app.use((err, req, res, next) => {
+  console.error('Error global:', err.stack);
+  
+  // Asegurar que siempre se devuelva JSON
+  res.status(500).json({
+    error: 'Error interno del servidor',
+    code: 'INTERNAL_ERROR',
+    requestId: req.id
+  });
+});
+
+// Ruta de validación mejorada
+router.get('/admin/pending-users', verifyAdmin, async (req, res) => {
+  try {
+    // Verificar que la conexión a la base de datos esté activa
+    if (!db) {
+      throw new Error('No hay conexión a la base de datos');
+    }
+
+    const user = await new Promise((resolve, reject) => {
+      db.get(
+        `SELECT id, email, isAdmin FROM users WHERE id = ?`,
+        [req.user.userId],
+        (err, row) => {
+          if (err) {
+            console.error('Error en consulta SQL:', err);
+            reject(new Error('Error de base de datos'));
+          } else {
+            resolve(row);
+          }
+        }
+      );
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        error: 'Usuario no encontrado',
+        code: 'USER_NOT_FOUND'
+      });
+    }
+
+    res.json({
+      valid: true,
+      user: {
+        id: user.id,
+        email: user.email,
+        isAdmin: user.isAdmin === 1 // Asegurar boolean
+      }
+    });
+
+  } catch (error) {
+    console.error('Error en validación:', error);
+    
+    // Asegurar respuesta en JSON
+    res.status(500).json({
+      error: error.message,
+      code: 'VALIDATION_ERROR'
+    });
+  }
+});
+
+// Modifica la ruta /api/admin/pending-users
+app.get('/api/admin/pending-users', authenticateToken, (req, res) => {
+  db.all(
+    `SELECT id, email, paymentDate, paymentVerified  // Añadí paymentVerified aquí
+     FROM users 
+     WHERE paymentVerified = 1 AND isActive = 0`,
+    [],
+    (err, rows) => {
+      if (err) {
+        console.error('Error en DB:', err);
+        return res.status(500).json({error: 'Error en base de datos'});
+      }
+      res.json(rows || []);
+    }
+  );
+});
+
+
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 // Configuración Socket.IO
@@ -152,8 +350,14 @@ io.use((socket, next) => {
 
 io.on('connection', (socket) => {
   console.log('Usuario conectado:', socket.userId);
-  socket.join(socket.userId.toString());
 
+  socket.on('syncScore', (data) => {
+    // Re-emitir a todos los clientes del mismo usuario
+    io.to(socket.userId.toString()).emit('updateScore', data);
+  });
+
+   socket.join(socket.userId.toString());
+  
   // Cargar o crear sesión de juego
   if (!activeSessions.has(socket.userId)) {
     db.get(
@@ -200,7 +404,7 @@ io.on('connection', (socket) => {
     socket.emit('kamgeonState', session.kamgeonState);
   }
 
-  // Manejador genérico para puntuaciones
+  // Manejadores de eventos
   const handlePuntuacion = (points) => (data) => {
     const session = activeSessions.get(socket.userId);
     if (!session || !session.gameState.gameActive) return;
@@ -247,57 +451,59 @@ io.on('connection', (socket) => {
     }
   };
 
-  // Manejadores específicos para cada tipo de golpe
   socket.on('puntuacionCabeza', handlePuntuacion(3));
   socket.on('puntuacionPeto', handlePuntuacion(2));
   socket.on('puntuacionGiroPeto', handlePuntuacion(4));
   socket.on('puntuacionGiroCabeza', handlePuntuacion(5));
   socket.on('puntuacionPuño', handlePuntuacion(1));
 
-  // Manejadores para ajustes manuales
-  socket.on('puntuacionSumar', (data) => {
-    const session = activeSessions.get(socket.userId);
-    if (!session || !session.gameState.gameActive) return;
-
-    const { equipo } = data;
-    if (equipo === 'azul') {
-      session.gameState.blueScore += 1;
-    } else {
-      session.gameState.redScore += 1;
-    }
-    io.to(socket.userId.toString()).emit('gameState', session.gameState);
-    checkScoreDifference(socket.userId);
-  });
-
   socket.on('puntuacionRestar', (data) => {
     const session = activeSessions.get(socket.userId);
     if (!session || !session.gameState.gameActive) return;
 
     const { equipo } = data;
+    
     if (equipo === 'azul') {
-      session.gameState.blueScore = Math.max(0, session.gameState.blueScore - 1);
+      session.gameState.blueScore = Math.max(session.gameState.blueScore - 1, 0);
     } else {
-      session.gameState.redScore = Math.max(0, session.gameState.redScore - 1);
+      session.gameState.redScore = Math.max(session.gameState.redScore - 1, 0);
     }
+
     io.to(socket.userId.toString()).emit('gameState', session.gameState);
     checkScoreDifference(socket.userId);
   });
 
-  // Manejador para Kamgeon (sin coincidencia requerida)
+  socket.on('puntuacionSumar', (data) => {
+    const session = activeSessions.get(socket.userId);
+    if (!session || !session.gameState.gameActive) return;
+
+    const { equipo } = data;
+    
+    if (equipo === 'azul') {
+      session.gameState.blueScore += 1;
+    } else {
+      session.gameState.redScore += 1;
+    }
+
+    io.to(socket.userId.toString()).emit('gameState', session.gameState);
+    checkScoreDifference(socket.userId);
+  });
+
   socket.on('puntuacionKamgeon', (data) => {
     const session = activeSessions.get(socket.userId);
     if (!session || !session.gameState.gameActive) return;
 
     const { equipo } = data;
+    
     if (equipo === 'azul') {
       session.kamgeonState.blueScore += 1;
     } else {
       session.kamgeonState.redScore += 1;
     }
+
     io.to(socket.userId.toString()).emit('kamgeonState', session.kamgeonState);
   });
 
-  // Reiniciar juego
   socket.on('resetGame', () => {
     const session = activeSessions.get(socket.userId);
     if (!session) return;
@@ -307,30 +513,48 @@ io.on('connection', (socket) => {
       redScore: 0,
       gameActive: true
     };
+    
     session.kamgeonState = {
       blueScore: 0,
       redScore: 0
     };
+    
     session.anotacionesTemporales = {
       azul: [],
       rojo: []
     };
-
+    
+    if (session.timeoutId) {
+      clearTimeout(session.timeoutId);
+      session.timeoutId = null;
+    }
+    
     // Guardar en base de datos
     db.run(
       `INSERT INTO game_sessions 
        (userId, blueScore, redScore, blueKamgeon, redKamgeon, gameActive) 
        VALUES (?, ?, ?, ?, ?, ?)`,
-      [socket.userId, 0, 0, 0, 0, 1]
+      [
+        socket.userId, 
+        session.gameState.blueScore, 
+        session.gameState.redScore,
+        session.kamgeonState.blueScore,
+        session.kamgeonState.redScore,
+        1
+      ]
     );
-
+    
     io.to(socket.userId.toString()).emit('gameState', session.gameState);
     io.to(socket.userId.toString()).emit('kamgeonState', session.kamgeonState);
     io.to(socket.userId.toString()).emit('gameReset');
+    
+    console.log(`Juego reiniciado para usuario ${socket.userId}`);
   });
 
   socket.on('disconnect', () => {
     console.log('Usuario desconectado:', socket.userId);
+    // Guardar estado al desconectar
+
     const session = activeSessions.get(socket.userId);
     if (session) {
       db.run(
@@ -365,7 +589,8 @@ function checkScoreDifference(userId) {
       winner: winner,
       blueScore: blueScore,
       redScore: redScore,
-      difference: difference
+      difference: difference,
+      timestamp: Date.now()
     };
     
     io.to(userId.toString()).emit('victoriaPorDiferencia', victoryData);
@@ -386,6 +611,7 @@ function checkScoreDifference(userId) {
     );
   }
 }
+
 // Ruta para administración (activar usuarios)
 app.post('/api/admin/activate', authenticateToken, (req, res) => {
   // Verificar si el usuario es admin (deberías implementar roles)
