@@ -14,12 +14,21 @@ const db = new sqlite3.Database(
 );
 
 // Función para ejecutar queries con promesas
+// En db.js
 function runQuery(sql, params = []) {
   return new Promise((resolve, reject) => {
-    db.run(sql, params, function(err) {
-      if (err) return reject(err);
-      resolve(this);
-    });
+    // Determinar si es SELECT (devuelve datos) u otra consulta
+    if (sql.trim().toUpperCase().startsWith('SELECT')) {
+      db.all(sql, params, (err, rows) => {
+        if (err) return reject(err);
+        resolve(rows);
+      });
+    } else {
+      db.run(sql, params, function(err) {
+        if (err) return reject(err);
+        resolve(this); // Devuelve el objeto result con lastID y changes
+      });
+    }
   });
 }
 
@@ -77,6 +86,7 @@ async function initializeDatabase() {
       password TEXT NOT NULL,
       isActive INTEGER DEFAULT 0,
       isAdmin INTEGER DEFAULT 0,
+      paymentVerified INTEGER DEFAULT 0,
       paymentDate TEXT,
       subscriptionEnd TEXT,
       createdAt TEXT DEFAULT CURRENT_TIMESTAMP
