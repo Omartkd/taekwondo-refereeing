@@ -1,0 +1,16 @@
+/* Efecto pulso para el enlace premium */
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+.text-warning.fw-bold {
+  animation: pulse 2s infinite;
+}
+
+/* Mejorar la tarjeta de plan recomendado */
+.border-success {
+  border-width: 2px !important;
+  box-shadow: 0 0 15px rgba(25, 135, 84, 0.2);
+}
