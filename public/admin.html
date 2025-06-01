@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panel de Administración</title>
+  <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body>
+  <div class="admin-container">
+  <h1>Panel de Administración</h1>
+  <div class="admin-section">
+    <h2>Usuarios Pendientes de Activación</h2>
+    
+    <!-- Contenedor para mensajes -->
+    <div id="message-container" class="message-container"></div>
+    
+    <!-- Tabla mejorada -->
+    <div class="table-responsive">
+      <table id="pendingUsers">
+        <thead>
+          <tr>
+            <th>Email</th>
+            <th>Fecha de Pago</th>
+            <th>Estado</th>
+            <th>Duración</th>
+            <th>Acción</th>
+          </tr>
+        </thead>
+        <tbody><!-- Sin espacios aquí --></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+  <script src="/js/admin.js"></script>
+
+
+</body>
+</html>
