@@ -630,45 +630,97 @@ document.addEventListener('DOMContentLoaded', function() {
     // Configurar manejadores de eventos para los botones
     function setupButtonHandlers() {
       // Botones de puntuación
-      document.getElementById('blueHeadKickButton').addEventListener('click', () => {
-        socket.emit('puntuacionCabeza', { equipo: 'azul', timestamp: Date.now() });
-      });
+      const buttons = [
+        'blueKamgeonButton', 'redKamgeonButton',
+        'blueAddButton', 'redAddButton',
+        'blueSubtractButton', 'redSubtractButton'
+    ];
     
-      document.getElementById('redHeadKickButton').addEventListener('click', () => {
-        socket.emit('puntuacionCabeza', { equipo: 'rojo', timestamp: Date.now() });
-      });
+    buttons.forEach(buttonId => {
+        const button = document.getElementById(buttonId);
+        button.replaceWith(button.cloneNode(true)); // "Resetea" el botón
+    });
     
-      document.getElementById('blueBodyKickButton').addEventListener('click', () => {
-        socket.emit('puntuacionPeto', { equipo: 'azul', timestamp: Date.now() });
-      });
-    
-      document.getElementById('redBodyKickButton').addEventListener('click', () => {
-        socket.emit('puntuacionPeto', { equipo: 'rojo', timestamp: Date.now() });
-      });
-    
-      document.getElementById('blueSpinningBodyKickButton').addEventListener('click', () => {
-        socket.emit('puntuacionGiroPeto', { equipo: 'azul', timestamp: Date.now() });
-      });
-    
-      document.getElementById('redSpinningBodyKickButton').addEventListener('click', () => {
-        socket.emit('puntuacionGiroPeto', { equipo: 'rojo', timestamp: Date.now() });
-      });
-    
-      document.getElementById('blueSpinningHeadKickButton').addEventListener('click', () => {
-        socket.emit('puntuacionGiroCabeza', { equipo: 'azul', timestamp: Date.now() });
-      });
-    
-      document.getElementById('redSpinningHeadKickButton').addEventListener('click', () => {
-        socket.emit('puntuacionGiroCabeza', { equipo: 'rojo', timestamp: Date.now() });
-      });
-    
-      document.getElementById('bluePunchButton').addEventListener('click', () => {
-        socket.emit('puntuacionPuño', { equipo: 'azul', timestamp: Date.now() });
-      });
-    
-      document.getElementById('redPunchButton').addEventListener('click', () => {
-        socket.emit('puntuacionPuño', { equipo: 'rojo', timestamp: Date.now() });
-      });
+    // Botones de puntuación
+    document.getElementById('blueHeadKickButton').addEventListener('click', () => {
+        socket.emit('puntuacionCabeza', { 
+            equipo: 'azul', 
+            tipo: 'cabeza',  // <--- Nuevo campo
+            timestamp: Date.now() 
+        });
+    });
+
+    document.getElementById('redHeadKickButton').addEventListener('click', () => {
+        socket.emit('puntuacionCabeza', { 
+            equipo: 'rojo', 
+            tipo: 'cabeza',  // <--- Nuevo campo
+            timestamp: Date.now() 
+        });
+    });
+
+    document.getElementById('blueBodyKickButton').addEventListener('click', () => {
+        socket.emit('puntuacionPeto', { 
+            equipo: 'azul', 
+            tipo: 'peto',  // <--- Nuevo campo
+            timestamp: Date.now() 
+        });
+    });
+
+    document.getElementById('redBodyKickButton').addEventListener('click', () => {
+        socket.emit('puntuacionPeto', { 
+            equipo: 'rojo', 
+            tipo: 'peto',  // <--- Nuevo campo
+            timestamp: Date.now() 
+        });
+    });
+
+    document.getElementById('blueSpinningBodyKickButton').addEventListener('click', () => {
+        socket.emit('puntuacionGiroPeto', { 
+            equipo: 'azul', 
+            tipo: 'giroPeto',  // <--- Nuevo campo
+            timestamp: Date.now() 
+        });
+    });
+
+    document.getElementById('redSpinningBodyKickButton').addEventListener('click', () => {
+        socket.emit('puntuacionGiroPeto', { 
+            equipo: 'rojo', 
+            tipo: 'giroPeto',  // <--- Nuevo campo
+            timestamp: Date.now() 
+        });
+    });
+
+    document.getElementById('blueSpinningHeadKickButton').addEventListener('click', () => {
+        socket.emit('puntuacionGiroCabeza', { 
+            equipo: 'azul', 
+            tipo: 'giroCabeza',  // <--- Nuevo campo
+            timestamp: Date.now() 
+        });
+    });
+
+    document.getElementById('redSpinningHeadKickButton').addEventListener('click', () => {
+        socket.emit('puntuacionGiroCabeza', { 
+            equipo: 'rojo', 
+            tipo: 'giroCabeza',  // <--- Nuevo campo
+            timestamp: Date.now() 
+        });
+    });
+
+    document.getElementById('bluePunchButton').addEventListener('click', () => {
+        socket.emit('puntuacionPuño', { 
+            equipo: 'azul', 
+            tipo: 'puño',  // <--- Nuevo campo
+            timestamp: Date.now() 
+        });
+    });
+
+    document.getElementById('redPunchButton').addEventListener('click', () => {
+        socket.emit('puntuacionPuño', { 
+            equipo: 'rojo', 
+            tipo: 'puño',  // <--- Nuevo campo
+            timestamp: Date.now() 
+        });
+    });
     
       document.getElementById('blueAddButton').addEventListener('click', () => {
         socket.emit('puntuacionSumar', { equipo: 'azul', timestamp: Date.now() });
