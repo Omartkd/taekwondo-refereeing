@@ -376,20 +376,20 @@ io.on('connection', (socket) => {
         };
         
         activeSessions.set(socket.userId, {
-          gameState: {
-            blueScore: gameState.blueScore,
-            redScore: gameState.redScore,
-            gameActive: Boolean(gameState.gameActive)
-          },
-          kamgeonState: {
-            blueScore: gameState.blueKamgeon || 0,
-            redScore: gameState.redKamgeon || 0
-          },
-          anotacionesTemporales: {
-            azul: [],
-            rojo: []
-          }
-        });
+    gameState: {
+        blueScore: gameState.blueScore,
+        redScore: gameState.redScore,
+        gameActive: Boolean(gameState.gameActive)
+    },
+    kamgeonState: {
+        blueScore: gameState.blueKamgeon || 0,
+        redScore: gameState.redKamgeon || 0
+    },
+    anotacionesTemporales: {
+        azul: {}, // Ahora es un objeto vacío en lugar de array
+        rojo: {}  // Ahora es un objeto vacío en lugar de array
+    }
+});
         
         emitInitialState(socket);
       }
@@ -409,47 +409,57 @@ io.on('connection', (socket) => {
     const session = activeSessions.get(socket.userId);
     if (!session || !session.gameState.gameActive) return;
 
-    const { equipo, timestamp } = data;
+    const { equipo, tipo, timestamp } = data; // Necesitamos agregar 'tipo' al data que se envía
     const now = Date.now();
 
     if (now - timestamp <= 5000) {
-      session.anotacionesTemporales[equipo].push({ timestamp, clienteId: socket.id });
-
-      if (session.timeoutId) {
-        clearTimeout(session.timeoutId);
-      }
-
-      if (session.anotacionesTemporales[equipo].length >= 2) {
-        const anotaciones = session.anotacionesTemporales[equipo];
-        const primeraAnotacion = anotaciones[0];
-        const ultimaAnotacion = anotaciones[anotaciones.length - 1];
-
-        if (primeraAnotacion.clienteId !== ultimaAnotacion.clienteId) {
-          const diferencia = Math.abs(primeraAnotacion.timestamp - ultimaAnotacion.timestamp);
-
-          if (diferencia <= 5000) {
-            if (equipo === 'azul') {
-              session.gameState.blueScore += points;
-            } else {
-              session.gameState.redScore += points;
-            }
-
-            io.to(socket.userId.toString()).emit('gameState', session.gameState);
-            session.anotacionesTemporales[equipo] = [];
-            checkScoreDifference(socket.userId);
-          } else {
-            session.anotacionesTemporales[equipo].shift();
-          }
-        } else {
-          session.anotacionesTemporales[equipo].shift();
+        // Modificamos la estructura para agrupar por tipo de golpe
+        if (!session.anotacionesTemporales[equipo][tipo]) {
+            session.anotacionesTemporales[equipo][tipo] = [];
         }
-      } else {
-        session.timeoutId = setTimeout(() => {
-          session.anotacionesTemporales[equipo] = [];
-        }, 5000);
-      }
+        
+        session.anotacionesTemporales[equipo][tipo].push({ timestamp, clienteId: socket.id });
+
+        if (session.timeoutId) {
+            clearTimeout(session.timeoutId);
+        }
+
+        // Verificamos solo las anotaciones del mismo tipo
+        if (session.anotacionesTemporales[equipo][tipo].length >= 2) {
+            const anotaciones = session.anotacionesTemporales[equipo][tipo];
+            const primeraAnotacion = anotaciones[0];
+            const ultimaAnotacion = anotaciones[anotaciones.length - 1];
+
+            if (primeraAnotacion.clienteId !== ultimaAnotacion.clienteId) {
+                const diferencia = Math.abs(primeraAnotacion.timestamp - ultimaAnotacion.timestamp);
+
+                if (diferencia <= 5000) {
+                    if (equipo === 'azul') {
+                        session.gameState.blueScore += points;
+                    } else {
+                        session.gameState.redScore += points;
+                    }
+
+                    io.to(socket.userId.toString()).emit('gameState', session.gameState);
+                    // Limpiamos solo este tipo de anotación
+                    session.anotacionesTemporales[equipo][tipo] = [];
+                    checkScoreDifference(socket.userId);
+                } else {
+                    session.anotacionesTemporales[equipo][tipo].shift();
+                }
+            } else {
+                session.anotacionesTemporales[equipo][tipo].shift();
+            }
+        } else {
+            session.timeoutId = setTimeout(() => {
+                // Limpiamos solo este tipo de anotación
+                if (session.anotacionesTemporales[equipo][tipo]) {
+                    session.anotacionesTemporales[equipo][tipo] = [];
+                }
+            }, 5000);
+        }
     }
-  };
+};
 
   socket.on('puntuacionCabeza', handlePuntuacion(3));
   socket.on('puntuacionPeto', handlePuntuacion(2));
