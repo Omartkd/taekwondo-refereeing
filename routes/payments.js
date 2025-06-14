@@ -4,8 +4,8 @@ const axios = require('axios');
 const { activateUser } = require('../db'); // Importamos solo la función necesaria
 
 const QVAPAY_CONFIG = {
-  appId: '1c08aef4-b7e7-4266-936b-c88573e517af',
-  appSecret: 'RBypDD68TBekw6QIMitIlr2juju5tnkeBqPMCoJDJ4OKX5Xz73',
+  appId: '',
+  appSecret: '',
   baseUrl: 'https://qvapay.com/api/v2',
   callbackUrl: 'https://taekwondo-refereeing.onrender.com/callback'
 };
